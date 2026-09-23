@@ -13,88 +13,65 @@ struct BrowserListRow: View {
   @State private var hovered = false
 
   var body: some View {
-    HStack(spacing: 0) {
-      Button(action: open) {
-        HStack(spacing: 12) {
-          BrowserArtwork(
-            row: row, model: model, cache: thumbnailCache, symbolSize: 22,
-            cornerRadius: 8, showsVideoBadge: false
+    Button(action: open) {
+      HStack(spacing: 12) {
+        BrowserArtwork(
+          row: row, model: model, cache: thumbnailCache, symbolSize: 22,
+          cornerRadius: 8, showsVideoBadge: false
+        )
+        .frame(width: 44, height: 44)
+        .clipShape(.rect(cornerRadius: 8))
+
+        VStack(alignment: .leading, spacing: 4) {
+          Text(row.name)
+            .font(.body.weight(.medium))
+            .lineLimit(1)
+          Text(compact ? compactMetadata : row.kindLabel)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+        if !compact {
+          Text(
+            row.object.map {
+              ByteCountFormatter.string(fromByteCount: $0.size, countStyle: .file)
+            } ?? "—"
           )
-          .frame(width: 44, height: 44)
-          .clipShape(.rect(cornerRadius: 8))
+          .font(.callout.monospacedDigit())
+          .foregroundStyle(.secondary)
+          .frame(width: 80, alignment: .trailing)
 
-          VStack(alignment: .leading, spacing: 4) {
-            Text(row.name)
-              .font(.body.weight(.medium))
-              .lineLimit(1)
-            Text(compact ? compactMetadata : row.kindLabel)
-              .font(.caption)
-              .foregroundStyle(.secondary)
-              .lineLimit(1)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-
-          if !compact {
-            Text(
-              row.object.map {
-                ByteCountFormatter.string(fromByteCount: $0.size, countStyle: .file)
-              } ?? "—"
-            )
-            .font(.callout.monospacedDigit())
-            .foregroundStyle(.secondary)
-            .frame(width: 80, alignment: .trailing)
-
-            Group {
-              if let date = row.object?.lastModified {
-                Text(date, format: .dateTime.year().month().day())
-              } else {
-                Text("—")
-              }
+          Group {
+            if let date = row.object?.lastModified {
+              Text(date, format: .dateTime.year().month().day())
+            } else {
+              Text("—")
             }
-            .font(.callout)
-            .foregroundStyle(.secondary)
-            .frame(width: 120, alignment: .trailing)
           }
-
-          if row.prefix != nil {
-            Image(systemName: "chevron.right")
-              .font(.callout)
-              .foregroundStyle(.secondary)
-              .frame(width: 28)
-              .accessibilityHidden(true)
-          }
+          .font(.callout)
+          .foregroundStyle(.secondary)
+          .frame(width: 120, alignment: .trailing)
         }
-        .frame(maxWidth: .infinity, minHeight: 56)
-        .padding(.leading, 12)
-        .padding(.trailing, row.object == nil ? 12 : 8)
-        .contentShape(Rectangle())
       }
-      .buttonStyle(.plain)
-      .accessibilityLabel(row.name)
-      .accessibilityHint(row.prefix == nil ? "Show object information" : "Open folder")
-      .help(row.fullKey)
-
-      if row.object != nil {
-        Button(action: inspect) {
-          Image(systemName: "info.circle")
-            .font(.system(size: 18, weight: .medium))
-            .frame(width: 32, height: 32)
-        }
-        .buttonStyle(.glass)
-        .accessibilityLabel("Information for \(row.name)")
-        .help("Object information")
-        .padding(.trailing, 12)
-      }
+      .frame(maxWidth: .infinity, minHeight: 56)
+      .padding(.horizontal, 12)
+      .contentShape(Rectangle())
     }
+    .buttonStyle(.plain)
     .background(fill, in: RoundedRectangle(cornerRadius: 10))
     .overlay(
       RoundedRectangle(cornerRadius: 10).strokeBorder(
         isSelected ? Color.accentColor.opacity(0.5) : Color.clear)
     )
     .onHover { hovered = $0 }
+    .accessibilityLabel(row.name)
+    .accessibilityHint(row.prefix == nil ? "Show object information" : "Open folder")
     .contextMenu {
       if row.object != nil { Button("Get Info", action: inspect) }
     }
+    .help(row.fullKey)
   }
 
   private var compactMetadata: String {
@@ -127,7 +104,6 @@ struct BrowserListHeader: View {
         Text("Size").frame(width: 80, alignment: .trailing)
         Text("Modified").frame(width: 120, alignment: .trailing)
       }
-      Color.clear.frame(width: 28, height: 1)
     }
     .font(.caption.weight(.medium))
     .foregroundStyle(.secondary)
