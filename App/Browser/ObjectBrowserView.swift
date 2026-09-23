@@ -1,11 +1,23 @@
+import AppKit
 import OpenBucketCore
+import QuickLook
 import SwiftUI
 
 struct ObjectBrowserView: View {
   let model: AppModel
+  @Binding var layout: BrowserLayout
+  let showSidebar: () -> Void
+  let addConnection: () -> Void
+  let editConnection: () -> Void
 
-  @State private var inspectedObject: ObjectSummary?
+  @State private var inspectedRow: BrowserRow?
   @State private var showsInspector = false
+  @State private var previewURL: URL?
+  @State private var previewDirectory: URL?
+  @State private var previewTask: Task<Void, Never>?
+  @State private var previewRequestID: UUID?
+  @State private var previewError: String?
+  @State private var isPreparingPreview = false
 
   var body: some View {
     VStack(spacing: 0) {
@@ -13,7 +25,6 @@ struct ObjectBrowserView: View {
         locationBar(location)
         Divider()
       }
-
       if let failure = model.connectionFailure ?? model.browser.failure, rows.isEmpty {
         failureView(failure)
       } else if model.isConnecting
@@ -22,37 +33,47 @@ struct ObjectBrowserView: View {
         ProgressView("Loading S3 contents…")
           .frame(maxWidth: .infinity, maxHeight: .infinity)
       } else if model.selectedProfile == nil {
-        ContentUnavailableView(
-          "Welcome to OpenBucket",
-          systemImage: "externaldrive.connected.to.line.below",
-          description: Text("Add an S3 connection to browse your objects.")
-        )
+        ContentUnavailableView {
+          Label("Welcome to OpenBucket", systemImage: "externaldrive.connected.to.line.below")
+        } description: {
+          Text("Add an S3 connection to browse your objects.")
+        } actions: {
+          Button("Add Connection", action: addConnection).buttonStyle(.glassProminent)
+        }
       } else if model.browser.location == nil {
-        if model.buckets.isEmpty {
-          ContentUnavailableView(
-            "No buckets available",
-            systemImage: "shippingbox",
-            description: Text(
-              "Enter a known bucket in the connection settings if listing all buckets is restricted.")
+        ContentUnavailableView {
+          Label(
+            model.buckets.isEmpty ? "No buckets available" : "Choose a bucket", systemImage: "shippingbox")
+        } description: {
+          Text(
+            model.buckets.isEmpty
+              ? "Enter a known bucket in connection settings if listing all buckets is restricted."
+              : "Select a bucket in the sidebar to browse its objects."
           )
-        } else {
-          ContentUnavailableView(
-            "Choose a bucket",
-            systemImage: "shippingbox",
-            description: Text("Select a bucket in the sidebar to browse its objects.")
-          )
+        } actions: {
+          if model.buckets.isEmpty {
+            Button("Edit Connection", action: editConnection).buttonStyle(.glassProminent)
+          } else {
+            Button("Show Sidebar", action: showSidebar).buttonStyle(.glassProminent)
+          }
         }
       } else {
         if let failure = model.connectionFailure ?? model.browser.failure {
           HStack {
-            Label(failure.message, systemImage: "exclamationmark.triangle")
-              .foregroundStyle(.orange)
+            Label(failure.message, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
             Spacer()
-            Button("Retry") { model.refresh() }
+            Button("Retry") { model.browser.nextToken == nil ? model.refresh() : model.loadNextPage() }
           }
-          .padding(10)
+          .padding(12)
         }
-
+        if let previewError {
+          HStack {
+            Label(previewError, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+            Spacer()
+            Button("Dismiss") { self.previewError = nil }
+          }
+          .padding(12)
+        }
         if rows.isEmpty {
           ContentUnavailableView(
             "This prefix is empty",
@@ -60,60 +81,74 @@ struct ObjectBrowserView: View {
             description: Text("There are no objects or child prefixes here.")
           )
         } else {
-          Table(rows) {
-            TableColumn("Name") { row in
-              Button {
-                open(row)
-              } label: {
-                Label(row.name, systemImage: row.prefix == nil ? "doc" : "folder")
-                  .lineLimit(1)
+          if layout == .grid {
+            GeometryReader { geometry in
+              let columns = max(1, Int((geometry.size.width - 24) / 240))
+              List {
+                ForEach(gridRows(columns: columns)) { group in
+                  HStack(alignment: .top, spacing: 16) {
+                    ForEach(group.items) { row in
+                      BrowserGridCard(row: row, model: model, open: { open(row) }, inspect: { inspect(row) })
+                        .frame(maxWidth: .infinity)
+                    }
+                    ForEach(0..<(columns - group.items.count), id: \.self) { _ in
+                      Color.clear.frame(maxWidth: .infinity)
+                    }
+                  }
+                  .accessibilityActions {
+                    ForEach(group.items) { row in
+                      Button("Open \(row.name)") { open(row) }
+                    }
+                  }
+                  .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                  .listRowBackground(Color.clear)
+                  .listRowSeparator(.hidden)
+                }
+                if let token = model.browser.nextToken {
+                  loadMore(token).listRowBackground(Color.clear).listRowSeparator(.hidden)
+                }
               }
-              .buttonStyle(.plain)
-              .help(row.fullKey)
+              .listStyle(.plain)
+              .id(model.browser.location)
             }
-            TableColumn("Size") { row in
-              if let object = row.object {
-                Text(ByteCountFormatter.string(fromByteCount: object.size, countStyle: .file))
-                  .foregroundStyle(.secondary)
+          } else {
+            List {
+              ForEach(rows) { row in
+                BrowserListRow(row: row, open: { open(row) }, inspect: { inspect(row) })
+                  .listRowInsets(EdgeInsets(top: 1, leading: 12, bottom: 1, trailing: 12))
+                  .listRowSeparator(.hidden)
+              }
+              if let token = model.browser.nextToken {
+                loadMore(token).listRowSeparator(.hidden)
               }
             }
-            .width(min: 80, ideal: 110)
-            TableColumn("Modified") { row in
-              if let date = row.object?.lastModified {
-                Text(date, format: .dateTime.year().month().day().hour().minute())
-                  .foregroundStyle(.secondary)
-              }
-            }
-            .width(min: 130, ideal: 170)
+            .listStyle(.plain)
+            .id(model.browser.location)
           }
-          .tableStyle(.inset)
-        }
-
-        if model.browser.pageNumber > 1 || model.browser.nextToken != nil {
-          Divider()
-          HStack {
-            Button("Previous Page") { model.loadPreviousPage() }
-              .disabled(model.browser.pageNumber == 1 || model.browser.isLoading)
-            Spacer()
-            Text("Page \(model.browser.pageNumber)")
-              .foregroundStyle(.secondary)
-            Spacer()
-            Button("Next Page") { model.loadNextPage() }
-              .disabled(model.browser.nextToken == nil || model.browser.isLoading)
-            if model.browser.isLoading { ProgressView().controlSize(.small) }
-          }
-          .padding(10)
         }
       }
     }
     .inspector(isPresented: $showsInspector) {
-      if let object = inspectedObject {
-        ObjectInspectorView(object: object)
-          .inspectorColumnWidth(min: 250, ideal: 300, max: 380)
+      if let inspectedRow, let object = inspectedRow.object {
+        ObjectInspectorView(row: inspectedRow, object: object, model: model) {
+          preparePreview(object)
+        }
+        .id(inspectedRow.id)
+        .inspectorColumnWidth(min: 300, ideal: 360, max: 480)
       }
     }
+    .quickLookPreview($previewURL)
+    .onChange(of: previewURL) { _, url in
+      if url == nil { clearPreview() }
+    }
     .onChange(of: model.browser.location) { _, _ in
-      inspectedObject = nil
+      previewTask?.cancel()
+      previewTask = nil
+      previewRequestID = nil
+      isPreparingPreview = false
+      previewURL = nil
+      clearPreview()
+      inspectedRow = nil
       showsInspector = false
     }
   }
@@ -130,17 +165,22 @@ struct ObjectBrowserView: View {
       }
       .disabled(location.prefix.isEmpty)
       .help("Parent prefix")
-
-      Image(systemName: "shippingbox")
-        .foregroundStyle(.secondary)
+      Image(systemName: "shippingbox").foregroundStyle(.secondary)
       Text(location.displayString)
         .font(.system(.body, design: .monospaced))
         .lineLimit(1)
-        .textSelection(.enabled)
+        .truncationMode(.middle)
+        .contextMenu {
+          Button("Copy S3 Location") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(location.displayString, forType: .string)
+          }
+        }
       Spacer()
       Text("\(model.browser.objects.count) objects")
         .font(.caption)
         .foregroundStyle(.secondary)
+      if isPreparingPreview { ProgressView().controlSize(.small) }
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
@@ -153,9 +193,7 @@ struct ObjectBrowserView: View {
       VStack(spacing: 8) {
         Text(failure.message)
         if let detail = failure.technicalDetail {
-          Text(detail)
-            .font(.caption.monospaced())
-            .textSelection(.enabled)
+          Text(detail).font(.caption.monospaced()).textSelection(.enabled)
         }
       }
     } actions: {
@@ -165,13 +203,8 @@ struct ObjectBrowserView: View {
 
   private var rows: [BrowserRow] {
     guard let location = model.browser.location else { return [] }
-    let prefixes = model.browser.prefixes.map { prefix in
-      BrowserRow(prefix: prefix, parentPrefix: location.prefix)
-    }
-    let objects = model.browser.objects.map { object in
-      BrowserRow(object: object, parentPrefix: location.prefix)
-    }
-    return prefixes + objects
+    return model.browser.prefixes.map { BrowserRow(prefix: $0, parentPrefix: location.prefix) }
+      + model.browser.objects.map { BrowserRow(object: $0, parentPrefix: location.prefix) }
   }
 
   private func open(_ row: BrowserRow) {
@@ -180,9 +213,83 @@ struct ObjectBrowserView: View {
       let location = try? S3Location(bucket: bucket, prefix: prefix)
     {
       model.open(location)
-    } else if let object = row.object {
-      inspectedObject = object
-      showsInspector = true
+    } else if row.object != nil {
+      inspect(row)
+    }
+  }
+
+  private func inspect(_ row: BrowserRow) {
+    guard row.object != nil else { return }
+    inspectedRow = row
+    showsInspector = true
+  }
+
+  private func preparePreview(_ object: ObjectSummary) {
+    guard object.size <= 64 * 1024 * 1024 else {
+      previewError = "This object is larger than the 64 MB preview limit."
+      return
+    }
+    previewTask?.cancel()
+    previewError = nil
+    isPreparingPreview = true
+    let requestID = UUID()
+    previewRequestID = requestID
+    let currentLocation = model.browser.location
+    previewTask = Task {
+      let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("OpenBucketPreview-\(UUID().uuidString)", isDirectory: true)
+      do {
+        try FileManager.default.createDirectory(
+          at: directory,
+          withIntermediateDirectories: false,
+          attributes: [.posixPermissions: 0o700]
+        )
+        let destination = directory.appendingPathComponent(PreviewFileName.from(objectKey: object.key))
+        try await model.download(object, to: destination, maximumBytes: 64 * 1024 * 1024)
+        guard !Task.isCancelled, model.browser.location == currentLocation else {
+          try? FileManager.default.removeItem(at: directory)
+          return
+        }
+        clearPreview()
+        previewDirectory = directory
+        previewURL = destination
+      } catch {
+        try? FileManager.default.removeItem(at: directory)
+        if !Task.isCancelled {
+          previewError = (error as? S3Failure)?.message ?? "This object could not be previewed."
+        }
+      }
+      if previewRequestID == requestID {
+        isPreparingPreview = false
+        previewRequestID = nil
+        previewTask = nil
+      }
+    }
+  }
+
+  private func clearPreview() {
+    if let previewDirectory { try? FileManager.default.removeItem(at: previewDirectory) }
+    previewDirectory = nil
+  }
+
+  private func loadMore(_ token: String) -> some View {
+    HStack(spacing: 10) {
+      ProgressView().controlSize(.small)
+      Text("Loading more objects…").foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(20)
+    .id(token)
+    .onScrollVisibilityChange(threshold: 0.5) { visible in
+      if visible && model.browser.failure == nil { model.loadNextPage() }
+    }
+  }
+
+  private func gridRows(columns: Int) -> [BrowserGridRow] {
+    let items = rows
+    return stride(from: 0, to: items.count, by: columns).map { offset in
+      let group = Array(items[offset..<min(offset + columns, items.count)])
+      return BrowserGridRow(id: group[0].id, items: group)
     }
   }
 
@@ -196,30 +303,7 @@ struct ObjectBrowserView: View {
   }
 }
 
-private struct BrowserRow: Identifiable {
-  let id: [UInt8]
-  let name: String
-  let fullKey: String
-  let prefix: String?
-  let object: ObjectSummary?
-
-  init(prefix: String, parentPrefix: String) {
-    id = [0] + Array(prefix.utf8)
-    fullKey = prefix
-    self.prefix = prefix
-    object = nil
-    let relative = prefix.hasPrefix(parentPrefix) ? String(prefix.dropFirst(parentPrefix.count)) : prefix
-    name = relative.hasSuffix("/") ? String(relative.dropLast()) : relative
-  }
-
-  init(object: ObjectSummary, parentPrefix: String) {
-    id = [1] + Array(object.key.utf8)
-    fullKey = object.key
-    prefix = nil
-    self.object = object
-    let relative =
-      object.key.hasPrefix(parentPrefix)
-      ? String(object.key.dropFirst(parentPrefix.count)) : object.key
-    name = relative.isEmpty ? "(current prefix marker)" : relative
-  }
+private struct BrowserGridRow: Identifiable {
+  let id: String
+  let items: [BrowserRow]
 }

@@ -7,7 +7,6 @@ public final class BrowseSession {
   public private(set) var prefixes: [String] = []
   public private(set) var objects: [ObjectSummary] = []
   public private(set) var nextToken: String?
-  public private(set) var pageNumber = 1
   public private(set) var isLoading = false
   public private(set) var failure: S3Failure?
 
@@ -15,7 +14,6 @@ public final class BrowseSession {
   @ObservationIgnored private var activeTask: Task<Void, Never>?
   @ObservationIgnored private var activeProfileID: UUID?
   @ObservationIgnored private var generation = 0
-  @ObservationIgnored private var pageTokens: [String?] = [nil]
 
   public init(repository: any S3Repository) {
     self.repository = repository
@@ -25,7 +23,7 @@ public final class BrowseSession {
     cancel()
     activeProfileID = profile.id
     self.location = location
-    loadPage(profile: profile, credentials: credentials, location: location, token: nil, index: 0)
+    loadPage(profile: profile, credentials: credentials, location: location, token: nil, append: false)
   }
 
   public func loadNextPage(profile: ConnectionProfile, credentials: S3Credentials) {
@@ -34,18 +32,7 @@ public final class BrowseSession {
       let token = nextToken,
       !isLoading
     else { return }
-    loadPage(profile: profile, credentials: credentials, location: location, token: token, index: pageNumber)
-  }
-
-  public func loadPreviousPage(profile: ConnectionProfile, credentials: S3Credentials) {
-    guard activeProfileID == profile.id,
-      let location,
-      pageNumber > 1,
-      !isLoading
-    else { return }
-    let index = pageNumber - 2
-    loadPage(
-      profile: profile, credentials: credentials, location: location, token: pageTokens[index], index: index)
+    loadPage(profile: profile, credentials: credentials, location: location, token: token, append: true)
   }
 
   public func cancel() {
@@ -57,8 +44,6 @@ public final class BrowseSession {
     prefixes = []
     objects = []
     nextToken = nil
-    pageNumber = 1
-    pageTokens = [nil]
     failure = nil
     isLoading = false
   }
@@ -68,27 +53,50 @@ public final class BrowseSession {
     credentials: S3Credentials,
     location: S3Location,
     token: String?,
-    index: Int
+    append: Bool
   ) {
     isLoading = true
     failure = nil
     let requestGeneration = generation
     activeTask = Task {
       do {
-        let page = try await repository.listObjects(
-          profile: profile,
-          credentials: credentials,
-          bucket: location.bucket,
-          prefix: location.prefix,
-          continuationToken: token
-        )
-        guard requestGeneration == generation, !Task.isCancelled else { return }
-        prefixes = page.prefixes
-        objects = page.objects
-        nextToken = page.nextToken
-        pageNumber = index + 1
-        pageTokens = Array(pageTokens.prefix(index)) + [token]
-        isLoading = false
+        var currentToken = token
+        var seenTokens = Set<String>()
+        var emptyPages = 0
+        while true {
+          if let currentToken { seenTokens.insert(currentToken) }
+          let page = try await repository.listObjects(
+            profile: profile,
+            credentials: credentials,
+            bucket: location.bucket,
+            prefix: location.prefix,
+            continuationToken: currentToken
+          )
+          guard requestGeneration == generation, !Task.isCancelled else { return }
+          if page.prefixes.isEmpty && page.objects.isEmpty,
+            let continuation = page.nextToken,
+            !seenTokens.contains(continuation)
+          {
+            emptyPages += 1
+            guard emptyPages < 16 else {
+              throw S3Failure(category: .unknown, message: "S3 returned too many empty pages.")
+            }
+            currentToken = continuation
+            continue
+          }
+          if append {
+            var seenPrefixes = Set(prefixes.map { Array($0.utf8) })
+            prefixes.append(contentsOf: page.prefixes.filter { seenPrefixes.insert(Array($0.utf8)).inserted })
+            var seenObjects = Set(objects.map(\.id))
+            objects.append(contentsOf: page.objects.filter { seenObjects.insert($0.id).inserted })
+          } else {
+            prefixes = page.prefixes
+            objects = page.objects
+          }
+          nextToken = page.nextToken.flatMap { seenTokens.contains($0) ? nil : $0 }
+          isLoading = false
+          return
+        }
       } catch {
         guard requestGeneration == generation, !Task.isCancelled else { return }
         failure = Self.failure(for: error)

@@ -4,6 +4,11 @@ import OpenBucketCore
 
 @MainActor @Observable
 final class AppModel {
+  struct DownloadSource: Sendable {
+    let profile: ConnectionProfile
+    let bucket: String
+  }
+
   private(set) var profiles: [ConnectionProfile] = []
   private(set) var selectedProfileID: UUID?
   private(set) var buckets: [String] = []
@@ -45,6 +50,9 @@ final class AppModel {
 
   func save(_ profile: ConnectionProfile, credentials: S3Credentials) async throws {
     let previous = profiles.first { $0.id == profile.id }
+    let previousCredentials =
+      previous?.credentialReference == profile.credentialReference
+      ? try? await credentialStore.load(reference: profile.credentialReference) : nil
     try await credentialStore.save(credentials, reference: profile.credentialReference)
     var updated = profiles.filter { $0.id != profile.id }
     updated.append(profile)
@@ -52,7 +60,11 @@ final class AppModel {
     do {
       try await profileStore.save(updated)
     } catch {
-      try? await credentialStore.delete(reference: profile.credentialReference)
+      if let previousCredentials {
+        try? await credentialStore.save(previousCredentials, reference: profile.credentialReference)
+      } else {
+        try? await credentialStore.delete(reference: profile.credentialReference)
+      }
       throw error
     }
     profiles = updated
@@ -134,19 +146,6 @@ final class AppModel {
   }
 
   func loadNextPage() {
-    loadPage(.next)
-  }
-
-  func loadPreviousPage() {
-    loadPage(.previous)
-  }
-
-  private enum PageDirection {
-    case next
-    case previous
-  }
-
-  private func loadPage(_ direction: PageDirection) {
     guard let profile = selectedProfile else { return }
     let requestGeneration = generation
     Task {
@@ -154,17 +153,42 @@ final class AppModel {
         let credentials = try await credentialStore.load(reference: profile.credentialReference)
         guard requestGeneration == generation, !Task.isCancelled else { return }
         connectionFailure = nil
-        switch direction {
-        case .next:
-          browser.loadNextPage(profile: profile, credentials: credentials)
-        case .previous:
-          browser.loadPreviousPage(profile: profile, credentials: credentials)
-        }
+        browser.loadNextPage(profile: profile, credentials: credentials)
       } catch {
         guard requestGeneration == generation else { return }
         connectionFailure = Self.failure(for: error)
       }
     }
+  }
+
+  func download(_ object: ObjectSummary, to destination: URL, maximumBytes: Int64) async throws {
+    guard let source = downloadSource() else {
+      throw S3Failure(category: .unknown, message: "Choose a bucket first.")
+    }
+    try await download(object, from: source, to: destination, maximumBytes: maximumBytes)
+  }
+
+  func downloadSource() -> DownloadSource? {
+    guard let profile = selectedProfile, let location = browser.location else { return nil }
+    return DownloadSource(profile: profile, bucket: location.bucket)
+  }
+
+  func download(
+    _ object: ObjectSummary,
+    from source: DownloadSource,
+    to destination: URL,
+    maximumBytes: Int64
+  ) async throws {
+    let credentials = try await credentialStore.load(reference: source.profile.credentialReference)
+    try Task.checkCancellation()
+    _ = try await repository.downloadObject(
+      profile: source.profile,
+      credentials: credentials,
+      bucket: source.bucket,
+      key: object.key,
+      to: destination,
+      maximumBytes: maximumBytes
+    )
   }
 
   func test(profile: ConnectionProfile, credentials: S3Credentials) async throws -> String {

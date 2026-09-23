@@ -31,7 +31,8 @@ func listsKnownGarageBucketAndNestedPrefix() async throws {
     prefix: "",
     continuationToken: nil
   )
-  #expect(root.prefixes.contains(prefix))
+  let firstPrefix = String(prefix.split(separator: "/").first ?? "") + "/"
+  #expect(root.prefixes.contains(firstPrefix))
 
   let nested = try await repository.listObjects(
     profile: profile,
@@ -41,4 +42,19 @@ func listsKnownGarageBucketAndNestedPrefix() async throws {
     continuationToken: nil
   )
   #expect(nested.objects.contains { $0.key == expectedKey })
+
+  let file = FileManager.default.temporaryDirectory.appendingPathComponent(
+    "openbucket-test-\(UUID().uuidString)")
+  defer { try? FileManager.default.removeItem(at: file) }
+  let info = try await repository.downloadObject(
+    profile: profile,
+    credentials: credentials,
+    bucket: bucket,
+    key: expectedKey,
+    to: file,
+    maximumBytes: 8 * 1024 * 1024
+  )
+  let data = try Data(contentsOf: file)
+  #expect(info.byteCount == data.count)
+  #expect(!data.isEmpty)
 }

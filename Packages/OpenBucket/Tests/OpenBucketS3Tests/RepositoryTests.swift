@@ -128,6 +128,89 @@ private actor RecordingHTTPClient: AWSHTTPClient {
   #expect(paths == ["/s3/photos"])
 }
 
+@Test func downloadUsesTheSignedObjectKeyAndWritesOnlyToTheChosenFile() async throws {
+  let transport = RecordingHTTPClient(responseBody: "hello")
+  let repository = SotoS3Repository(httpClient: transport)
+  let profile = ConnectionProfile(
+    name: "Gateway",
+    endpoint: try S3Endpoint("http://storage.example.com/s3/"),
+    region: "garage",
+    addressingStyle: .path
+  )
+  let file = FileManager.default.temporaryDirectory.appendingPathComponent("openbucket-\(UUID().uuidString)")
+  defer { try? FileManager.default.removeItem(at: file) }
+
+  let info = try await repository.downloadObject(
+    profile: profile,
+    credentials: S3Credentials(accessKeyID: "test", secretAccessKey: "test"),
+    bucket: "photos",
+    key: "trip/a b.txt",
+    to: file,
+    maximumBytes: 100
+  )
+
+  #expect(info.byteCount == 5)
+  #expect(try String(contentsOf: file, encoding: .utf8) == "hello")
+  #expect(await transport.paths() == ["/s3/photos/trip/a%20b.txt"])
+}
+
+@Test func downloadLimitPreservesAnExistingDestination() async throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent("openbucket-download-\(UUID().uuidString)", isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  let destination = directory.appendingPathComponent("existing.txt")
+  try "original".write(to: destination, atomically: true, encoding: .utf8)
+  let profile = ConnectionProfile(
+    name: "Gateway",
+    endpoint: try S3Endpoint("http://storage.example.com"),
+    region: "garage",
+    addressingStyle: .path
+  )
+  let repository = SotoS3Repository(httpClient: RecordingHTTPClient(responseBody: "too long"))
+
+  do {
+    _ = try await repository.downloadObject(
+      profile: profile,
+      credentials: S3Credentials(accessKeyID: "test", secretAccessKey: "test"),
+      bucket: "photos",
+      key: "existing.txt",
+      to: destination,
+      maximumBytes: 3
+    )
+    Issue.record("An oversized object was saved")
+  } catch let failure as S3Failure {
+    #expect(failure.message == "This object is too large to preview.")
+  }
+  #expect(try String(contentsOf: destination, encoding: .utf8) == "original")
+  #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["existing.txt"])
+}
+
+@Test func downloadsAnEmptyObject() async throws {
+  let destination = FileManager.default.temporaryDirectory
+    .appendingPathComponent("openbucket-empty-\(UUID().uuidString)")
+  defer { try? FileManager.default.removeItem(at: destination) }
+  let profile = ConnectionProfile(
+    name: "Gateway",
+    endpoint: try S3Endpoint("http://storage.example.com"),
+    region: "garage",
+    addressingStyle: .path
+  )
+  let repository = SotoS3Repository(httpClient: RecordingHTTPClient(responseBody: ""))
+
+  let info = try await repository.downloadObject(
+    profile: profile,
+    credentials: S3Credentials(accessKeyID: "test", secretAccessKey: "test"),
+    bucket: "photos",
+    key: "empty.txt",
+    to: destination,
+    maximumBytes: .max
+  )
+
+  #expect(info.byteCount == 0)
+  #expect(try Data(contentsOf: destination).isEmpty)
+}
+
 @Test func classifiesS3ErrorCodesWithoutEchoingServiceMessages() {
   let denied = S3ErrorMapper.map(AWSResponseError(errorCode: "AccessDenied"))
   let invalidKey = S3ErrorMapper.map(AWSResponseError(errorCode: "InvalidAccessKeyId"))

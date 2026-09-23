@@ -4,6 +4,8 @@ import SwiftUI
 struct ContentView: View {
   @State private var model: AppModel
   @State private var sidebarSelection: UUID?
+  @State private var columnVisibility: NavigationSplitViewVisibility = .all
+  @State private var browserLayout: BrowserLayout = .grid
   @State private var showsEditor = false
   @State private var editingProfile: ConnectionProfile?
   @State private var showsOpenLocation = false
@@ -19,7 +21,7 @@ struct ContentView: View {
   }
 
   var body: some View {
-    NavigationSplitView {
+    NavigationSplitView(columnVisibility: $columnVisibility) {
       List(selection: $sidebarSelection) {
         Section("Connections") {
           ForEach(model.profiles) { profile in
@@ -51,54 +53,69 @@ struct ContentView: View {
         }
       }
       .navigationTitle("OpenBucket")
-      .frame(minWidth: 210)
-      .toolbar {
-        ToolbarItem(placement: .primaryAction) {
+      .navigationSplitViewColumnWidth(min: 210, ideal: 250, max: 350)
+    } detail: {
+      ObjectBrowserView(
+        model: model,
+        layout: $browserLayout,
+        showSidebar: { columnVisibility = .all },
+        addConnection: {
+          editingProfile = nil
+          showsEditor = true
+        },
+        editConnection: {
+          if let profile = model.selectedProfile { edit(profile) }
+        }
+      )
+      .navigationTitle(model.selectedProfile?.name ?? "Browse S3")
+    }
+    .toolbar {
+      ToolbarItemGroup(placement: .primaryAction) {
+        Button {
+          editingProfile = nil
+          showsEditor = true
+        } label: {
+          Label("Add Connection", systemImage: "plus")
+        }
+        .help("Add S3 connection")
+        .keyboardShortcut("n", modifiers: .command)
+
+        if let profile = model.selectedProfile {
           Button {
-            editingProfile = nil
-            showsEditor = true
+            showsOpenLocation = true
           } label: {
-            Label("Add Connection", systemImage: "plus")
+            Label("Open S3 Location", systemImage: "arrow.right.doc.on.clipboard")
           }
-          .help("Add S3 connection")
-          .keyboardShortcut("n", modifiers: .command)
+          .help("Open s3://bucket/prefix")
+          .keyboardShortcut("l", modifiers: .command)
+
+          Button {
+            model.refresh()
+          } label: {
+            Label("Refresh", systemImage: "arrow.clockwise")
+          }
+          .help("Refresh current location")
+          .keyboardShortcut("r", modifiers: .command)
+
+          Menu {
+            Button("Edit Connection") { edit(profile) }
+            Button("Delete Connection", role: .destructive) {
+              showsDeleteConfirmation = true
+            }
+          } label: {
+            Label("Connection Actions", systemImage: "ellipsis.circle")
+          }
+
+          Picker("View", selection: $browserLayout) {
+            Label("Grid", systemImage: "square.grid.2x2").tag(BrowserLayout.grid)
+            Label("List", systemImage: "list.bullet").tag(BrowserLayout.list)
+          }
+          .pickerStyle(.segmented)
+          .labelsHidden()
+          .frame(width: 100)
+          .help("Change object view")
         }
       }
-    } detail: {
-      ObjectBrowserView(model: model)
-        .navigationTitle(model.selectedProfile?.name ?? "Browse S3")
-        .toolbar {
-          ToolbarItemGroup(placement: .primaryAction) {
-            Button {
-              showsOpenLocation = true
-            } label: {
-              Label("Open S3 Location", systemImage: "arrow.right.doc.on.clipboard")
-            }
-            .disabled(model.selectedProfile == nil)
-            .help("Open s3://bucket/prefix")
-            .keyboardShortcut("l", modifiers: .command)
-
-            Button {
-              model.refresh()
-            } label: {
-              Label("Refresh", systemImage: "arrow.clockwise")
-            }
-            .disabled(model.selectedProfile == nil)
-            .help("Refresh current location")
-            .keyboardShortcut("r", modifiers: .command)
-
-            if let profile = model.selectedProfile {
-              Menu {
-                Button("Edit Connection") { edit(profile) }
-                Button("Delete Connection", role: .destructive) {
-                  showsDeleteConfirmation = true
-                }
-              } label: {
-                Label("Connection Actions", systemImage: "ellipsis.circle")
-              }
-            }
-          }
-        }
     }
     .navigationSplitViewStyle(.balanced)
     .sheet(isPresented: $showsEditor) {

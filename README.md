@@ -1,18 +1,26 @@
 # OpenBucket
 
-OpenBucket is a native macOS 26+ app for browsing Amazon S3 and compatible object stores. It uses SwiftUI and the system Liquid Glass appearance. The current milestone is read-only: connect, discover buckets when permitted, browse a known bucket directly, navigate object-key prefixes, and inspect basic object details.
+OpenBucket is a native macOS 26+ app for browsing Amazon S3 and compatible object stores. It uses SwiftUI and the system Liquid Glass appearance. The current milestone is read-only: connect, discover buckets when permitted, browse a known bucket directly, navigate object-key prefixes, and preview objects.
 
 ## What works today
 
 - Multiple connection profiles with custom HTTP or HTTPS endpoint, region, and addressing style.
 - Known-bucket access without requiring `ListBuckets` permission.
 - Access key, secret key, and optional session token in macOS Keychain. The profile file contains only settings and a credential reference.
-- `ListObjectsV2` with `/` delimiter and explicit continuation pages.
-- One page of up to 500 entries in memory, with previous and next page controls.
+- `ListObjectsV2` with `/` delimiter and on-demand infinite scrolling. Each request fetches at most 500 entries; earlier entries remain visible while the next page loads.
+- Grid and list layouts. Selecting a file opens a right-side inspector with metadata and image or video artwork for objects up to 8 MB. Its Preview button opens macOS Quick Look for objects up to 64 MB; its Download button saves the full object to a chosen local file using a bounded-memory stream. Large objects retain a type icon and metadata without automatic content transfer.
 - Direct `s3://bucket/prefix/` navigation, refresh, object details, and clear loading and failure states.
 - Path-style S3 against Garage 2.4.1, including a nested prefix, verified with an isolated local fixture.
 
-Uploads, downloads, deletion, synchronization, Finder mounting, and non-S3 protocols are not part of this milestone.
+Quick Look uses a temporary local copy and removes it when the preview closes. Uploads, deletion, synchronization, Finder mounting, and non-S3 protocols are not part of this milestone.
+
+## Local credential storage
+
+There is no app database. Non-secret profile settings live in `~/Library/Application Support/OpenBucket/profiles.json` with user-only file permissions; the containing directory is user-only too. The JSON stores a random Keychain reference, never the access key or secret. Secrets live in macOS Keychain as a generic password item. The store prefers the data-protection Keychain with `WhenUnlockedThisDeviceOnly` and reads older login-Keychain items for migration. This repository currently builds an unsigned debug app, so macOS denies data-protection Keychain access and the app falls back to the login Keychain. A signed release must configure and verify the required Keychain entitlement before claiming the stronger accessibility setting.
+
+Automatic thumbnails and Quick Look copies are kept in private temporary directories and deleted after use. A crash may leave a temporary preview file until the operating system cleans its temporary directory.
+
+Downloads are written to a private temporary file beside the chosen destination and moved into place only after the transfer completes. A failed or canceled transfer leaves an existing destination intact.
 
 ## Endpoint paths
 

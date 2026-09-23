@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import OpenBucketCore
 import SotoCore
@@ -71,6 +72,56 @@ public struct SotoS3Repository: S3Repository {
     }
   }
 
+  public func downloadObject(
+    profile: ConnectionProfile,
+    credentials: S3Credentials,
+    bucket: String,
+    key: String,
+    to destination: URL,
+    maximumBytes: Int64
+  ) async throws -> ObjectContentInfo {
+    guard maximumBytes > 0 else {
+      throw S3Failure(category: .unknown, message: "Invalid preview size limit.")
+    }
+    let timeout: SotoCore.TimeAmount = maximumBytes == .max ? .seconds(3600) : .seconds(120)
+    return try await withService(profile: profile, credentials: credentials, timeout: timeout) {
+      service in
+      let output = try await service.getObject(bucket: bucket, key: key)
+      if let length = output.contentLength, length > maximumBytes {
+        throw S3Failure(category: .unknown, message: "This object is too large to preview.")
+      }
+      let staging = destination.deletingLastPathComponent()
+        .appendingPathComponent(".openbucket-\(UUID().uuidString).download")
+      guard
+        FileManager.default.createFile(
+          atPath: staging.path, contents: nil, attributes: [.posixPermissions: 0o600]
+        )
+      else {
+        throw CocoaError(.fileWriteUnknown)
+      }
+      defer { try? FileManager.default.removeItem(at: staging) }
+      let handle = try FileHandle(forWritingTo: staging)
+      defer { try? handle.close() }
+      var byteCount: Int64 = 0
+      if !output.body.isEmpty {
+        for try await chunk in output.body {
+          try Task.checkCancellation()
+          guard chunk.readableBytes <= maximumBytes - byteCount else {
+            throw S3Failure(category: .unknown, message: "This object is too large to preview.")
+          }
+          try handle.write(contentsOf: Data(chunk.readableBytesView))
+          byteCount += Int64(chunk.readableBytes)
+        }
+      }
+      try handle.close()
+      try Task.checkCancellation()
+      guard Darwin.rename(staging.path, destination.path) == 0 else {
+        throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+      }
+      return ObjectContentInfo(contentType: output.contentType, byteCount: byteCount)
+    }
+  }
+
   struct RequestSettings: Sendable {
     let endpoint: String
     let forceVirtualHost: Bool
@@ -100,6 +151,7 @@ public struct SotoS3Repository: S3Repository {
   private func withService<Value: Sendable>(
     profile: ConnectionProfile,
     credentials: S3Credentials,
+    timeout: SotoCore.TimeAmount = .seconds(6),
     operation: @Sendable (S3) async throws -> Value
   ) async throws -> Value {
     let endpointPath =
@@ -134,12 +186,12 @@ public struct SotoS3Repository: S3Repository {
       client: client,
       region: Region(rawValue: profile.region),
       endpoint: settings.endpoint,
-      timeout: .seconds(6),
+      timeout: timeout,
       options: options
     )
     do {
       let value = try await operation(service)
-      try await client.shutdown()
+      try? await client.shutdown()
       return value
     } catch {
       try? await client.shutdown()

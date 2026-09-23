@@ -20,15 +20,41 @@ private actor ControlledRepository: S3Repository {
     if bucket == "slow" {
       return try await withCheckedThrowingContinuation { heldRequest = $0 }
     }
+    if bucket == "empty-first" {
+      return continuationToken == nil
+        ? ObjectPage(prefixes: [], objects: [], nextToken: "after-empty")
+        : ObjectPage(
+          prefixes: [],
+          objects: [.init(key: "visible", size: 1, lastModified: nil, eTag: nil)],
+          nextToken: nil
+        )
+    }
     if continuationToken == "second" {
       return ObjectPage(
-        prefixes: [], objects: [.init(key: "two", size: 2, lastModified: nil, eTag: nil)], nextToken: nil)
+        prefixes: ["folder/"],
+        objects: [
+          .init(key: "one", size: 1, lastModified: nil, eTag: nil),
+          .init(key: "two", size: 2, lastModified: nil, eTag: nil),
+        ],
+        nextToken: nil
+      )
     }
     return ObjectPage(
       prefixes: ["folder/"],
       objects: [.init(key: "one", size: 1, lastModified: nil, eTag: nil)],
       nextToken: "second"
     )
+  }
+
+  func downloadObject(
+    profile: ConnectionProfile,
+    credentials: S3Credentials,
+    bucket: String,
+    key: String,
+    to destination: URL,
+    maximumBytes: Int64
+  ) async throws -> ObjectContentInfo {
+    ObjectContentInfo(contentType: "text/plain", byteCount: 0)
   }
 
   func hasHeldRequest() -> Bool { heldRequest != nil }
@@ -63,7 +89,7 @@ private actor ControlledRepository: S3Repository {
   #expect(session.nextToken == "second")
 }
 
-@Test @MainActor func pagingReplacesResultsAndCanReturn() async throws {
+@Test @MainActor func scrollingAppendsTheNextPageOnce() async throws {
   let repository = ControlledRepository()
   let session = BrowseSession(repository: repository)
   let profile = try makeProfile()
@@ -74,16 +100,24 @@ private actor ControlledRepository: S3Repository {
   session.loadNextPage(profile: profile, credentials: credentials)
   for _ in 0..<100 where session.isLoading { await Task.yield() }
 
-  #expect(session.objects.map(\.key) == ["two"])
-  #expect(session.pageNumber == 2)
+  #expect(session.objects.map(\.key) == ["one", "two"])
+  #expect(session.prefixes == ["folder/"])
   #expect(session.nextToken == nil)
+  session.loadNextPage(profile: profile, credentials: credentials)
+  #expect(session.objects.map(\.key) == ["one", "two"])
+}
 
-  session.loadPreviousPage(profile: profile, credentials: credentials)
+@Test @MainActor func skipsEmptyContinuationPageBeforeShowingEmptyState() async throws {
+  let session = BrowseSession(repository: ControlledRepository())
+  let profile = try makeProfile()
+  let credentials = S3Credentials(accessKeyID: "test", secretAccessKey: "test")
+
+  session.navigate(profile: profile, credentials: credentials, to: try S3Location(bucket: "empty-first"))
   for _ in 0..<100 where session.isLoading { await Task.yield() }
 
-  #expect(session.objects.map(\.key) == ["one"])
-  #expect(session.pageNumber == 1)
-  #expect(session.nextToken == "second")
+  #expect(session.objects.map(\.key) == ["visible"])
+  #expect(session.nextToken == nil)
+  #expect(session.failure == nil)
 }
 
 private func makeProfile() throws -> ConnectionProfile {

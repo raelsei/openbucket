@@ -39,6 +39,16 @@ public struct ObjectPage: Sendable {
   }
 }
 
+public struct ObjectContentInfo: Sendable {
+  public let contentType: String?
+  public let byteCount: Int64
+
+  public init(contentType: String?, byteCount: Int64) {
+    self.contentType = contentType
+    self.byteCount = byteCount
+  }
+}
+
 /// The read-only S3 operations needed by the browser.
 public protocol S3Repository: Sendable {
   func listBuckets(profile: ConnectionProfile, credentials: S3Credentials) async throws -> [String]
@@ -50,4 +60,13 @@ public protocol S3Repository: Sendable {
     prefix: String,
     continuationToken: String?
   ) async throws -> ObjectPage
+
+  func downloadObject(
+    profile: ConnectionProfile,
+    credentials: S3Credentials,
+    bucket: String,
+    key: String,
+    to destination: URL,
+    maximumBytes: Int64
+  ) async throws -> ObjectContentInfo
 }
