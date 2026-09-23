@@ -28,4 +28,14 @@ public struct S3Location: Hashable, Sendable {
   public var displayString: String {
     "s3://\(bucket)/\(prefix)"
   }
+
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.bucket.utf8.elementsEqual(rhs.bucket.utf8)
+      && lhs.prefix.utf8.elementsEqual(rhs.prefix.utf8)
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(Array(bucket.utf8))
+    hasher.combine(Array(prefix.utf8))
+  }
 }

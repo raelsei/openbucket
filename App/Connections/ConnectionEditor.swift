@@ -117,10 +117,18 @@ struct ConnectionEditor: View {
       url.percentEncodedPath.hasSuffix("/")
       ? String(url.percentEncodedPath.dropLast()) : url.percentEncodedPath
     let bucketName = bucket.isEmpty ? "<bucket>" : bucket
+    let isAmazonEndpoint =
+      host.hasSuffix(".amazonaws.com") || host.hasSuffix(".amazonaws.com.cn")
     switch addressingStyle {
     case .automatic:
+      if isAmazonEndpoint {
+        return "Amazon endpoint selects virtual-host addressing for standard buckets."
+      }
       return "Custom endpoint uses path style; endpoint path: \(basePath.isEmpty ? "/" : basePath)"
     case .path:
+      if isAmazonEndpoint && !bucket.isEmpty && !bucket.contains(".") {
+        return "Path style is unavailable for this Amazon endpoint and bucket."
+      }
       return "\(host)\(basePath)/\(bucketName)/<object-key>"
     case .virtualHost:
       if !basePath.isEmpty {
@@ -138,6 +146,14 @@ struct ConnectionEditor: View {
       !cleanAccessKey.isEmpty, !secretAccessKey.isEmpty
     else { throw EditorError.missingRequiredField }
     let endpoint = try S3Endpoint(endpoint.trimmingCharacters(in: .whitespacesAndNewlines))
+    if addressingStyle == .path,
+      let host = endpoint.url.host?.lowercased(),
+      host.hasSuffix(".amazonaws.com") || host.hasSuffix(".amazonaws.com.cn"),
+      !bucket.isEmpty,
+      !bucket.contains(".")
+    {
+      throw EditorError.pathStyleAmazonEndpoint
+    }
     let endpointPath =
       URLComponents(url: endpoint.url, resolvingAgainstBaseURL: false)?.percentEncodedPath ?? ""
     if addressingStyle == .virtualHost && !endpointPath.isEmpty && endpointPath != "/" {
@@ -197,6 +213,10 @@ struct ConnectionEditor: View {
       feedback = "Name, region, access key, and secret key are required."
     case EditorError.virtualHostEndpointPath:
       feedback = "Choose path style for an endpoint URL that contains a path."
+    case EditorError.pathStyleAmazonEndpoint:
+      feedback = "Choose Automatic or Virtual host for this Amazon endpoint."
+    case S3Endpoint.ValidationError.encodedPathNotSupported:
+      feedback = "Encoded characters in the endpoint path are not supported by this S3 adapter."
     default:
       feedback = AppModel.failure(for: error).message
     }
@@ -207,6 +227,7 @@ struct ConnectionEditor: View {
 private enum EditorError: Error {
   case missingRequiredField
   case virtualHostEndpointPath
+  case pathStyleAmazonEndpoint
 }
 
 extension String {

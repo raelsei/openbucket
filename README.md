@@ -16,9 +16,11 @@ Uploads, downloads, deletion, synchronization, Finder mounting, and non-S3 proto
 
 ## Endpoint paths
 
-The endpoint URL path and the object-key prefix are separate. For example, `https://store.example.com/s3/` with bucket `photos` and path-style addressing sends a request under `/s3/photos`; `photos/2026/` in the starting-prefix field filters object keys inside that bucket. The adapter has a test that captures the signed SDK request path and checks this join.
+The endpoint URL path and the object-key prefix are separate. For example, `https://store.example.com/s3/` with bucket `photos` and path-style addressing sends a request under `/s3/photos`; `photos/2026/` in the starting-prefix field filters object keys inside that bucket. The adapter has a test that captures the signed SDK request path and checks this join. Percent-encoded endpoint paths are rejected because Soto can rewrite their bytes while constructing an S3 request.
 
-Soto uses path-style addressing for custom endpoints by default. Virtual-host addressing works with a pathless endpoint, such as `https://store.example.com`; the app rejects virtual-host addressing with an endpoint path because Soto produces an incompatible URL for that combination. A path-aware S3 gateway must receive the same path that was signed. The request-path test does not establish compatibility with a proxy that rewrites the path.
+Soto uses path-style addressing for custom endpoints by default. Virtual-host addressing works with a pathless endpoint, such as `https://store.example.com`; the app rejects virtual-host addressing with an endpoint path because Soto produces an incompatible URL for that combination. Soto selects virtual-host addressing for Amazon endpoints even when a regular bucket is configured for explicit path style; the app reports this unsupported combination instead of silently changing the request. A path-aware S3 gateway must receive the same path that was signed. The request-path test does not establish compatibility with a proxy that rewrites the path.
+
+Listings request S3 URL encoding for keys that XML cannot represent. Returned keys and prefixes are decoded once only when the service marks the response as URL encoded; literal percent signs in object keys remain intact.
 
 ## Build
 

@@ -8,6 +8,7 @@ public struct S3Endpoint: Codable, Hashable, Sendable {
     case missingHost
     case userInfoNotAllowed
     case queryOrFragmentNotAllowed
+    case encodedPathNotSupported
   }
 
   public let absoluteString: String
@@ -29,6 +30,9 @@ public struct S3Endpoint: Codable, Hashable, Sendable {
     }
     guard components.query == nil, components.fragment == nil else {
       throw ValidationError.queryOrFragmentNotAllowed
+    }
+    guard !components.percentEncodedPath.contains("%") else {
+      throw ValidationError.encodedPathNotSupported
     }
     absoluteString = url.absoluteString
   }

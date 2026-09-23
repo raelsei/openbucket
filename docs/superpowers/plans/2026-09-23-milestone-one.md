@@ -55,7 +55,7 @@
 
 **Files:** `Sources/OpenBucketS3/*.swift`, `Tests/OpenBucketS3Tests/*.swift`, `README.md`
 
-**Interfaces:** Consumes core values and `S3Repository`; produces `AWSS3Repository`. `OpenBucketMac` constructs it through `S3Repository`.
+**Interfaces:** Consumes core values and `S3Repository`; produces `SotoS3Repository`. `OpenBucketMac` constructs it through `S3Repository`.
 
 - [ ] **Step 1: Write failing adapter tests** for known-bucket `ListObjectsV2`, delimiter `/`, page token passthrough, and endpoint path request construction. The request proof must assert the actual SDK-generated path, not string concatenation in app code.
 - [ ] **Step 2: Run `swift test --package-path Packages/OpenBucket --filter OpenBucketS3Tests`; expected:** missing adapter or failing assertions.

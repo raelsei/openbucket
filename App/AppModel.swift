@@ -153,6 +153,7 @@ final class AppModel {
       do {
         let credentials = try await credentialStore.load(reference: profile.credentialReference)
         guard requestGeneration == generation, !Task.isCancelled else { return }
+        connectionFailure = nil
         switch direction {
         case .next:
           browser.loadNextPage(profile: profile, credentials: credentials)

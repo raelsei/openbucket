@@ -15,7 +15,7 @@ public struct SotoS3Repository: S3Repository {
   }
 
   public func listBuckets(profile: ConnectionProfile, credentials: S3Credentials) async throws -> [String] {
-    try await withService(profile: profile, credentials: credentials) { service in
+    return try await withService(profile: profile, credentials: credentials) { service in
       let output = try await service.listBuckets()
       return output.buckets?.compactMap(\.name) ?? []
     }
@@ -28,26 +28,41 @@ public struct SotoS3Repository: S3Repository {
     prefix: String,
     continuationToken: String?
   ) async throws -> ObjectPage {
-    try await withService(profile: profile, credentials: credentials) { service in
+    if profile.addressingStyle == .path,
+      let host = profile.endpoint.url.host?.lowercased(),
+      Self.isAmazonEndpoint(host),
+      !bucket.contains(".")
+    {
+      throw S3Failure(
+        category: .regionOrEndpoint,
+        message:
+          "Soto uses virtual-host addressing for this Amazon endpoint. Choose Automatic or Virtual host."
+      )
+    }
+    return try await withService(profile: profile, credentials: credentials) { service in
       let request = S3.ListObjectsV2Request(
         bucket: bucket,
         continuationToken: continuationToken,
         delimiter: "/",
+        encodingType: .url,
         maxKeys: 500,
         prefix: prefix
       )
       let output = try await service.listObjectsV2(request)
-      let prefixes = output.commonPrefixes?.compactMap(\.prefix) ?? []
-      let objects =
-        output.contents?.compactMap { object -> ObjectSummary? in
-          guard let key = object.key else { return nil }
-          return ObjectSummary(
-            key: key,
-            size: object.size ?? 0,
-            lastModified: object.lastModified,
-            eTag: object.eTag
-          )
-        } ?? []
+      let isURLEncoded = output.encodingType == .url
+      let prefixes = try (output.commonPrefixes ?? []).compactMap { item -> String? in
+        guard let prefix = item.prefix else { return nil }
+        return try Self.decodeKey(prefix, isURLEncoded: isURLEncoded)
+      }
+      let objects = try (output.contents ?? []).compactMap { object -> ObjectSummary? in
+        guard let key = object.key else { return nil }
+        return ObjectSummary(
+          key: try Self.decodeKey(key, isURLEncoded: isURLEncoded),
+          size: object.size ?? 0,
+          lastModified: object.lastModified,
+          eTag: object.eTag
+        )
+      }
       return ObjectPage(
         prefixes: prefixes,
         objects: objects,
@@ -67,6 +82,19 @@ public struct SotoS3Repository: S3Repository {
       endpoint: endpoint.hasSuffix("/") ? String(endpoint.dropLast()) : endpoint,
       forceVirtualHost: profile.addressingStyle == .virtualHost
     )
+  }
+
+  private static func decodeKey(_ value: String, isURLEncoded: Bool) throws -> String {
+    guard isURLEncoded else { return value }
+    guard let decoded = value.removingPercentEncoding else {
+      throw S3Failure(category: .unknown, message: "S3 returned an invalid URL-encoded object key.")
+    }
+    return decoded
+  }
+
+  private static func isAmazonEndpoint(_ host: String) -> Bool {
+    host == "amazonaws.com" || host.hasSuffix(".amazonaws.com")
+      || host == "amazonaws.com.cn" || host.hasSuffix(".amazonaws.com.cn")
   }
 
   private func withService<Value: Sendable>(

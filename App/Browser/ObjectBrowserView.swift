@@ -43,7 +43,7 @@ struct ObjectBrowserView: View {
           )
         }
       } else {
-        if let failure = model.browser.failure {
+        if let failure = model.connectionFailure ?? model.browser.failure {
           HStack {
             Label(failure.message, systemImage: "exclamationmark.triangle")
               .foregroundStyle(.orange)
@@ -197,14 +197,14 @@ struct ObjectBrowserView: View {
 }
 
 private struct BrowserRow: Identifiable {
-  let id: String
+  let id: [UInt8]
   let name: String
   let fullKey: String
   let prefix: String?
   let object: ObjectSummary?
 
   init(prefix: String, parentPrefix: String) {
-    id = "prefix:\(prefix)"
+    id = [0] + Array(prefix.utf8)
     fullKey = prefix
     self.prefix = prefix
     object = nil
@@ -213,7 +213,7 @@ private struct BrowserRow: Identifiable {
   }
 
   init(object: ObjectSummary, parentPrefix: String) {
-    id = "object:\(object.key)"
+    id = [1] + Array(object.key.utf8)
     fullKey = object.key
     prefix = nil
     self.object = object

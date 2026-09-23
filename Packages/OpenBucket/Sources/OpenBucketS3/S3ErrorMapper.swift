@@ -1,3 +1,4 @@
+import AsyncHTTPClient
 import Foundation
 import OpenBucketCore
 import SotoCore
@@ -17,12 +18,26 @@ enum S3ErrorMapper {
         technicalDetail: "URL error: \(urlError.code.rawValue)"
       )
     }
+    if error is HTTPClient.NWTLSError {
+      return S3Failure(
+        category: .tls,
+        message: "TLS verification failed. Check the endpoint certificate.",
+        technicalDetail: "SDK error: NWTLSError"
+      )
+    }
+    if error is HTTPClient.NWPOSIXError {
+      return S3Failure(
+        category: .network,
+        message: "The S3 endpoint could not be reached.",
+        technicalDetail: "SDK error: NWPOSIXError"
+      )
+    }
 
     if let serviceError = error as? any AWSErrorType {
       return serviceFailure(for: serviceError)
     }
     let name = String(describing: type(of: error))
-    if ["NWPOSIXError", "HTTPClientError", "ChannelError"].contains(name) {
+    if ["HTTPClientError", "ChannelError"].contains(name) {
       return S3Failure(
         category: .network,
         message: "The S3 endpoint could not be reached.",

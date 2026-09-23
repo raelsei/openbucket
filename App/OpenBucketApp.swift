@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct OpenBucketApp: App {
   var body: some Scene {
-    WindowGroup("OpenBucket") {
+    Window("OpenBucket", id: "main") {
       ContentView(
         repository: SotoS3Repository(),
         profileStore: ProfileStore(fileURL: Self.profilesURL),

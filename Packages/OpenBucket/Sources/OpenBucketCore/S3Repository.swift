@@ -1,7 +1,7 @@
 import Foundation
 
 public struct ObjectSummary: Hashable, Identifiable, Sendable {
-  public var id: String { key }
+  public var id: [UInt8] { Array(key.utf8) }
   public let key: String
   public let size: Int64
   public let lastModified: Date?
@@ -12,6 +12,18 @@ public struct ObjectSummary: Hashable, Identifiable, Sendable {
     self.size = size
     self.lastModified = lastModified
     self.eTag = eTag
+  }
+
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    lhs.id == rhs.id && lhs.size == rhs.size && lhs.lastModified == rhs.lastModified
+      && lhs.eTag == rhs.eTag
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
+    hasher.combine(size)
+    hasher.combine(lastModified)
+    hasher.combine(eTag)
   }
 }
 
