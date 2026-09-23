@@ -8,7 +8,7 @@ There is no binary release yet. Publish one only after the DMG is signed with De
 
 1. If your **Developer ID Application** signing identity already exists on another Mac, export it there as a password-protected `.p12` from **Xcode → Settings → Accounts → your team → Manage Certificates**, then double-click the `.p12` on this Mac to import the certificate **and private key**. A downloaded `.cer` alone cannot sign without its matching private key. Keep the `.p12` and its password private. See [Apple's identity sharing guide](https://developer.apple.com/documentation/Xcode/sharing-your-teams-signing-certificates).
 2. If you need a new identity, create its request on the Mac that will build releases: **Keychain Access → Certificate Assistant → Request a Certificate from a Certificate Authority**. Enter your Apple Account email and a name, leave the CA email empty, and save the `.certSigningRequest` to disk. The matching private key stays in this Mac's Keychain. Follow [Apple's CSR instructions](https://developer.apple.com/help/account/certificates/create-a-certificate-signing-request). As the Apple Developer Program Account Holder, open [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/certificates/list), add a certificate under **Software → Developer ID → Developer ID Application**, upload the CSR, download the `.cer`, and double-click it to install it. A DMG needs the Application certificate; the Installer certificate is for `.pkg` installers. See [Apple's Developer ID certificate guide](https://developer.apple.com/help/account/certificates/create-developer-id-certificates).
-3. Confirm that `security find-identity -v -p codesigning` lists a valid `Developer ID Application` identity. Find your ten-character Team ID in [Apple Developer membership details](https://developer.apple.com/account). Generate an app-specific password at [account.apple.com](https://account.apple.com) under **Sign-In and Security → App-Specific Passwords**. Name it for OpenBucket notarization. Do not use your regular Apple Account password.
+3. Confirm that `security find-identity -v -p codesigning` lists a valid `Developer ID Application` identity. For a new certificate, choose the **G2 Sub-CA** option in Apple's portal; the Previous Sub-CA expires in February 2027. If more than one identity has the same name, identify the intended certificate by its SHA-1 fingerprint. Find your ten-character Team ID in [Apple Developer membership details](https://developer.apple.com/account). Generate an app-specific password at [account.apple.com](https://account.apple.com) under **Sign-In and Security → App-Specific Passwords**. Name it for OpenBucket notarization. Do not use your regular Apple Account password.
 4. Create a local notarytool Keychain profile. The following command prompts for that app-specific password securely; do not put it in the repository or shell history:
 
    ```sh
@@ -17,10 +17,10 @@ There is no binary release yet. Publish one only after the DMG is signed with De
      --team-id YOUR_TEAM_ID
    ```
 
-5. Set the exact identity name from `security find-identity` and your team ID in your shell. Keep the notary profile in Keychain:
+5. Set the 40-character SHA-1 fingerprint of the intended Developer ID Application identity from `security find-identity` and your team ID in your shell. Keep the notary profile in Keychain:
 
    ```sh
-   export OPENBUCKET_SIGNING_IDENTITY='Developer ID Application: YOUR NAME (TEAMID)'
+   export OPENBUCKET_SIGNING_IDENTITY='40_CHARACTER_SHA1_FINGERPRINT'
    export OPENBUCKET_TEAM_ID='TEAMID'
    export OPENBUCKET_NOTARY_PROFILE='openbucket-release'
    ```

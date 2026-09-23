@@ -7,12 +7,18 @@ if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 2
 fi
 
-: "${OPENBUCKET_SIGNING_IDENTITY:?Set OPENBUCKET_SIGNING_IDENTITY to your Developer ID Application identity}"
+: "${OPENBUCKET_SIGNING_IDENTITY:?Set OPENBUCKET_SIGNING_IDENTITY to your Developer ID Application SHA-1 fingerprint}"
 : "${OPENBUCKET_TEAM_ID:?Set OPENBUCKET_TEAM_ID to your Apple Developer team ID}"
 : "${OPENBUCKET_NOTARY_PROFILE:?Set OPENBUCKET_NOTARY_PROFILE to a notarytool Keychain profile}"
 
-if [[ $OPENBUCKET_SIGNING_IDENTITY != 'Developer ID Application:'* ]]; then
-  echo "Release signing requires a Developer ID Application identity." >&2
+if [[ ! $OPENBUCKET_SIGNING_IDENTITY =~ ^[[:xdigit:]]{40}$ ]]; then
+  echo "Set OPENBUCKET_SIGNING_IDENTITY to the 40-character SHA-1 fingerprint from security find-identity." >&2
+  exit 1
+fi
+
+identity_record=$(/usr/bin/security find-identity -v -p codesigning | /usr/bin/grep -i "$OPENBUCKET_SIGNING_IDENTITY" || true)
+if [[ $identity_record != *'"Developer ID Application:'* ]]; then
+  echo "The selected fingerprint is not a valid Developer ID Application identity." >&2
   exit 1
 fi
 
