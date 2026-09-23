@@ -1,7 +1,7 @@
 # OpenBucket: macOS S3 client design
 
 Date: 2026-09-23
-Status: Design for review
+Status: Approved for implementation
 
 ## Product intent
 
