@@ -1,0 +1,485 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		15A16CB5F322D02535AED277 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA5F357829EB81D59F69654 /* ContentView.swift */; };
+		1C564A3BBFEBD322051CDC1D /* ObjectInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A752271B4BBFDFACCA08E36 /* ObjectInspectorView.swift */; };
+		1EBFD07A91677539D164286A /* ConnectionEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6E5FC0CF2A73879A6FD7D9 /* ConnectionEditor.swift */; };
+		336BBE225E4ECE606A578A86 /* OpenBucketS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABCC04768593C406BAE11C /* OpenBucketS3 */; };
+		487B3D81F668001D75058D5D /* OpenBucketCore in Frameworks */ = {isa = PBXBuildFile; productRef = 887403CD20B5EBC385904939 /* OpenBucketCore */; };
+		5085DB8C7173D9BBCFF0523C /* OpenBucketApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */; };
+		6AA5FF8C29DBD96854F64373 /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D892EF569D3EA2E8A2236C7A /* ProfileStore.swift */; };
+		820E7F421BE9DD72CC7AD2D3 /* KeychainCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFE9CC622E1E0D826A5A2818 /* KeychainCredentialStore.swift */; };
+		985534263FD98CFF6B847369 /* StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FC01D86217CC165F100A40 /* StorageTests.swift */; };
+		A2B30E7553E514A25A7783B8 /* ObjectBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */; };
+		A51FCA0293CF9A3FC2F34B14 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E53802465FE31616C866F0 /* AppModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AEC3286ED6E2BA8527E1AA9E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8ECF4ED6994585648D5E8F6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6D712B2B512EE2EE4E5976F;
+			remoteInfo = OpenBucket;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		39906F4FFCB7FBD884F76912 /* OpenBucket.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenBucket.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4BA5F357829EB81D59F69654 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4F6E5FC0CF2A73879A6FD7D9 /* ConnectionEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionEditor.swift; sourceTree = "<group>"; };
+		5A752271B4BBFDFACCA08E36 /* ObjectInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectInspectorView.swift; sourceTree = "<group>"; };
+		64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBucketApp.swift; sourceTree = "<group>"; };
+		711BEF07C60DBC90F3B3DE9C /* OpenBucket */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OpenBucket; path = Packages/OpenBucket; sourceTree = SOURCE_ROOT; };
+		A9E53802465FE31616C866F0 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBrowserView.swift; sourceTree = "<group>"; };
+		BD4E870664208E516FCC2697 /* OpenBucketTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenBucketTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1FC01D86217CC165F100A40 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
+		D892EF569D3EA2E8A2236C7A /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
+		FFE9CC622E1E0D826A5A2818 /* KeychainCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4011EB9DA23F995391EB75A9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				487B3D81F668001D75058D5D /* OpenBucketCore in Frameworks */,
+				336BBE225E4ECE606A578A86 /* OpenBucketS3 in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		07DFAF71096EC697703FADC8 /* AppTests */ = {
+			isa = PBXGroup;
+			children = (
+				D1FC01D86217CC165F100A40 /* StorageTests.swift */,
+			);
+			path = AppTests;
+			sourceTree = "<group>";
+		};
+		09A870BF2A39DBF158CEEA3C /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A9E53802465FE31616C866F0 /* AppModel.swift */,
+				4BA5F357829EB81D59F69654 /* ContentView.swift */,
+				64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */,
+				4A1342BBDDA65166643C9D50 /* Browser */,
+				87883C5C8813EE1C07F8AF59 /* Connections */,
+				C93A6001A89F15BC0E386BFF /* Storage */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		0DCCD21A048C158B4D005E6F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				711BEF07C60DBC90F3B3DE9C /* OpenBucket */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		13B8EF01042BAE1E3C17F047 = {
+			isa = PBXGroup;
+			children = (
+				09A870BF2A39DBF158CEEA3C /* App */,
+				07DFAF71096EC697703FADC8 /* AppTests */,
+				0DCCD21A048C158B4D005E6F /* Packages */,
+				BD8F99CBFFDB4FEC3280D644 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4A1342BBDDA65166643C9D50 /* Browser */ = {
+			isa = PBXGroup;
+			children = (
+				B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */,
+				5A752271B4BBFDFACCA08E36 /* ObjectInspectorView.swift */,
+			);
+			path = Browser;
+			sourceTree = "<group>";
+		};
+		87883C5C8813EE1C07F8AF59 /* Connections */ = {
+			isa = PBXGroup;
+			children = (
+				4F6E5FC0CF2A73879A6FD7D9 /* ConnectionEditor.swift */,
+			);
+			path = Connections;
+			sourceTree = "<group>";
+		};
+		BD8F99CBFFDB4FEC3280D644 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				39906F4FFCB7FBD884F76912 /* OpenBucket.app */,
+				BD4E870664208E516FCC2697 /* OpenBucketTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C93A6001A89F15BC0E386BFF /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				FFE9CC622E1E0D826A5A2818 /* KeychainCredentialStore.swift */,
+				D892EF569D3EA2E8A2236C7A /* ProfileStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1A0EF4D0ADA8BCFF8A7996A6 /* OpenBucketTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DFCC9E125D36E83E8EA6D408 /* Build configuration list for PBXNativeTarget "OpenBucketTests" */;
+			buildPhases = (
+				8C0A976846086CA941767E8A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F399B3C7D8746CF91D492281 /* PBXTargetDependency */,
+			);
+			name = OpenBucketTests;
+			packageProductDependencies = (
+			);
+			productName = OpenBucketTests;
+			productReference = BD4E870664208E516FCC2697 /* OpenBucketTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B6D712B2B512EE2EE4E5976F /* OpenBucket */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F11F974F3BA12DF710CFCF0C /* Build configuration list for PBXNativeTarget "OpenBucket" */;
+			buildPhases = (
+				19D0784EF3968BA30BF147C3 /* Sources */,
+				4011EB9DA23F995391EB75A9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenBucket;
+			packageProductDependencies = (
+				887403CD20B5EBC385904939 /* OpenBucketCore */,
+				4BABCC04768593C406BAE11C /* OpenBucketS3 */,
+			);
+			productName = OpenBucket;
+			productReference = 39906F4FFCB7FBD884F76912 /* OpenBucket.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F8ECF4ED6994585648D5E8F6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 326541523B3BDDEF3C9D5838 /* Build configuration list for PBXProject "OpenBucket" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 13B8EF01042BAE1E3C17F047;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A2CC55A91D3B4485FF590A46 /* XCLocalSwiftPackageReference "Packages/OpenBucket" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BD8F99CBFFDB4FEC3280D644 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B6D712B2B512EE2EE4E5976F /* OpenBucket */,
+				1A0EF4D0ADA8BCFF8A7996A6 /* OpenBucketTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		19D0784EF3968BA30BF147C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A51FCA0293CF9A3FC2F34B14 /* AppModel.swift in Sources */,
+				1EBFD07A91677539D164286A /* ConnectionEditor.swift in Sources */,
+				15A16CB5F322D02535AED277 /* ContentView.swift in Sources */,
+				820E7F421BE9DD72CC7AD2D3 /* KeychainCredentialStore.swift in Sources */,
+				A2B30E7553E514A25A7783B8 /* ObjectBrowserView.swift in Sources */,
+				1C564A3BBFEBD322051CDC1D /* ObjectInspectorView.swift in Sources */,
+				5085DB8C7173D9BBCFF0523C /* OpenBucketApp.swift in Sources */,
+				6AA5FF8C29DBD96854F64373 /* ProfileStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C0A976846086CA941767E8A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				985534263FD98CFF6B847369 /* StorageTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F399B3C7D8746CF91D492281 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6D712B2B512EE2EE4E5976F /* OpenBucket */;
+			targetProxy = AEC3286ED6E2BA8527E1AA9E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		37F656E555F6B048ACA32D9E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OpenBucket;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.openbucket.app;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		4ECBC349A82A2D46A91097DA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.openbucket.app-tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenBucket.app/Contents/MacOS/OpenBucket";
+			};
+			name = Release;
+		};
+		59B6092A4DFBC035A3F858C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.openbucket.app-tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenBucket.app/Contents/MacOS/OpenBucket";
+			};
+			name = Debug;
+		};
+		65612F82295ED33E26763B75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OpenBucket;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.openbucket.app;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D65DC2529A80B07B80D51D0A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		EF9AB67EAB68E501F93108E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		326541523B3BDDEF3C9D5838 /* Build configuration list for PBXProject "OpenBucket" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D65DC2529A80B07B80D51D0A /* Debug */,
+				EF9AB67EAB68E501F93108E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DFCC9E125D36E83E8EA6D408 /* Build configuration list for PBXNativeTarget "OpenBucketTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				59B6092A4DFBC035A3F858C4 /* Debug */,
+				4ECBC349A82A2D46A91097DA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F11F974F3BA12DF710CFCF0C /* Build configuration list for PBXNativeTarget "OpenBucket" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				37F656E555F6B048ACA32D9E /* Debug */,
+				65612F82295ED33E26763B75 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A2CC55A91D3B4485FF590A46 /* XCLocalSwiftPackageReference "Packages/OpenBucket" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/OpenBucket;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4BABCC04768593C406BAE11C /* OpenBucketS3 */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenBucketS3;
+		};
+		887403CD20B5EBC385904939 /* OpenBucketCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenBucketCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F8ECF4ED6994585648D5E8F6 /* Project object */;
+}

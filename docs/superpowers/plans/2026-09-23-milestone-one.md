@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a macOS 26+ SwiftUI app that saves generic S3 connections securely and browses known buckets and prefixes through the official AWS Swift SDK.
+**Goal:** Ship a macOS 26+ SwiftUI app that saves generic S3 connections securely and browses known buckets and prefixes through Soto for Swift.
 
 **Architecture:** A Swift package owns `OpenBucketCore` domain behavior and `OpenBucketS3` SDK adaptation. The Xcode app owns SwiftUI, Keychain, and profile persistence; it assembles concrete dependencies once and presents cancellable browsing state.
 
-**Tech Stack:** Swift 6, SwiftUI, Security framework, AWS SDK for Swift 1.7.90, Swift Testing, XcodeGen, Xcode 27.
+**Tech Stack:** Swift 6, SwiftUI, Security framework, Soto 7.15.0, Swift Testing, XcodeGen, Xcode 27.
 
 **Spec:** `docs/superpowers/specs/2026-09-23-openbucket-design.md`
 
@@ -59,7 +59,7 @@
 
 - [ ] **Step 1: Write failing adapter tests** for known-bucket `ListObjectsV2`, delimiter `/`, page token passthrough, and endpoint path request construction. The request proof must assert the actual SDK-generated path, not string concatenation in app code.
 - [ ] **Step 2: Run `swift test --package-path Packages/OpenBucket --filter OpenBucketS3Tests`; expected:** missing adapter or failing assertions.
-- [ ] **Step 3: Implement `AWSS3Repository`** with static identity resolver, explicit endpoint, region, addressing style, `ListBuckets` for discovery, and `ListObjectsV2` for a known bucket. Map SDK errors into redacted `S3Failure` categories using structured status/code when available.
+- [ ] **Step 3: Implement `SotoS3Repository`** with static identity resolver, explicit endpoint, region, addressing style, `ListBuckets` for discovery, and `ListObjectsV2` for a known bucket. Map SDK errors into redacted `S3Failure` categories using structured status/code when available.
 - [ ] **Step 4: Run focused and full package tests; expected:** all green. Run opt-in integration against isolated Garage with `region=garage` and path-style, then record request-path probe outcome in README. Commit `feat: add AWS S3 adapter`.
 
 ### Task 3: Secure profile management and SwiftUI app
@@ -82,4 +82,3 @@
 - [ ] **Step 1: Add a regression test** for any behavior found while exercising Garage and the UI; run it and confirm the failure.
 - [ ] **Step 2: Fix the behavior, run the regression and full suites, format sources, and run the Xcode build; expected:** green suites and successful build.
 - [ ] **Step 3: Document build, supported endpoint semantics, tested Garage path, and opt-in integration; review the diff for secrets and unnecessary comments. Commit `docs: document OpenBucket milestone one`.
-

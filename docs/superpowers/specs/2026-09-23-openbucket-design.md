@@ -43,7 +43,7 @@ The connection editor names three separate concepts: bucket addressing style, an
 The first codebase has three focused targets:
 
 1. `OpenBucketCore` is a pure Swift package containing S3 domain values, narrow protocols, and application operations. It imports neither SwiftUI nor an S3 SDK.
-2. `OpenBucketS3` implements the S3 port using the official AWS SDK for Swift. SDK request/response types and errors stay inside this target. A second adapter is justified only by a demonstrated compatibility gap.
+2. `OpenBucketS3` implements the S3 port using Soto for Swift. SDK request/response types and errors stay inside this target. A second adapter is justified only by a demonstrated compatibility gap.
 3. `OpenBucketMac` is the SwiftUI app. It owns presentation state and macOS adapters such as Keychain-backed credentials and profile persistence. Views call application operations, not SDK methods.
 
 Dependency direction is `OpenBucketS3 → OpenBucketCore`, while `OpenBucketMac` depends on both targets to assemble the app. Only the composition root references the concrete S3 adapter. Protocols are introduced at external boundaries that need substitution, not for every class or function. Features are grouped by connection, browsing, and object details; files stay small enough to read by responsibility rather than by an arbitrary line limit.
@@ -54,7 +54,7 @@ UI state uses Swift Observation and structured concurrency. Network work runs of
 
 ## SDK and compatibility decision
 
-The official AWS SDK for Swift is the first S3 adapter candidate because it provides `S3Client`, configurable clients, S3 operations, and a maintained transfer manager. Soto is a credible alternative and remains an adapter-level fallback. The decisive technical probe is to use the official SDK against an isolated local Garage bucket for `ListObjectsV2`, then capture the generated request for an endpoint URL containing a path such as `/s3/`. Standard Garage does not by itself establish that a path-prefixed reverse proxy can preserve SigV4 signatures: a proxy that changes a signed path may cause authentication to fail. An end-to-end claim of path-prefix support requires a compatible path-aware service or gateway test. If the SDK cannot preserve the configured path reliably, the implementation plan must choose a supported resolver or change the adapter before the UI depends on it; the app must not claim support based on URL string concatenation.
+The official AWS SDK for Swift was evaluated first, but SwiftPM attempted to fetch its approximately 2.4 GB repository and did not finish in 18 minutes. Soto 7.15 is the initial adapter because its package resolved successfully and has explicit custom-endpoint path-style behavior. A test captures its signed `ListObjectsV2` request and verifies that `/s3/` plus a bucket produces `/s3/bucket`, without a double slash. Standard Garage does not by itself establish that a path-prefixed reverse proxy can preserve SigV4 signatures: a proxy that changes a signed path may cause authentication to fail. An end-to-end claim of path-prefix support requires a compatible path-aware service or gateway test. The adapter must not claim support based on URL string concatenation alone.
 
 Connection profiles are provider-neutral. Known-provider presets may fill endpoint and region defaults, but all fields remain editable. Optional operations are represented by capabilities established from provider documentation or explicit probes; absence of a capability never blocks basic object browsing. Diagnostics do not assume that a failed `ListBuckets` call means the bucket credentials are invalid.
 
@@ -87,6 +87,7 @@ Tests target behavior at the boundaries: endpoint and key handling, profile isol
 
 - Apple: [Build a SwiftUI app with the new design](https://developer.apple.com/videos/play/wwdc2025/323/) and [Landmarks with Liquid Glass](https://developer.apple.com/documentation/SwiftUI/Landmarks-Building-an-app-with-Liquid-Glass)
 - AWS: [AWS SDK for Swift S3](https://docs.aws.amazon.com/sdk-for-swift/latest/developer-guide/using-services-s3.html), [client configuration](https://docs.aws.amazon.com/sdk-for-swift/latest/developer-guide/config-code.html), and [S3 object keys](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html)
+- Soto: [service objects and endpoint style](https://soto.codes/user-guides/service-objects.html)
 - AWS: [Signature Version 4 request matching](https://docs.aws.amazon.com/AmazonS3/latest/developerguide/sig-v4-authenticating-requests.html)
 - Garage: [S3 compatibility status](https://garagehq.deuxfleurs.fr/documentation/reference-manual/s3-compatibility/)
 - Swift: [API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)
