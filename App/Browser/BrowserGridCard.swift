@@ -48,6 +48,7 @@ struct BrowserGridCard: View {
   private var artwork: some View {
     BrowserArtwork(row: row, model: model, cache: thumbnailCache, contentMode: .fit)
       .frame(height: 160)
+      .clipped()
   }
 
   private var cardFill: Color {
