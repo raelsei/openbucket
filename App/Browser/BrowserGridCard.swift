@@ -36,12 +36,12 @@ struct BrowserGridCard: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(10)
-      .contentShape(RoundedRectangle(cornerRadius: 14))
+      .contentShape(cardShape)
     }
     .buttonStyle(.plain)
-    .background(cardFill, in: RoundedRectangle(cornerRadius: 14))
+    .background(cardFill, in: cardShape)
     .overlay(
-      RoundedRectangle(cornerRadius: 14).strokeBorder(
+      cardShape.strokeBorder(
         isSelected
           ? Color.accentColor.opacity(0.55)
           : hovered ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.12))
@@ -61,14 +61,24 @@ struct BrowserGridCard: View {
   }
 
   private var artwork: some View {
-    BrowserArtwork(row: row, model: model, cache: thumbnailCache, contentMode: .fit)
-      .frame(height: 160)
-      .clipped()
+    GeometryReader { geometry in
+      BrowserArtwork(
+        row: row, model: model, cache: thumbnailCache, contentMode: .fill,
+        cornerRadius: 20
+      )
+      .frame(width: geometry.size.width, height: geometry.size.height)
+      .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+    .frame(height: 160)
   }
 
   private var cardFill: Color {
     if isSelected { return Color.accentColor.opacity(0.13) }
     if hovered { return Color.accentColor.opacity(0.08) }
     return Color.secondary.opacity(0.035)
+  }
+
+  private var cardShape: RoundedRectangle {
+    RoundedRectangle(cornerRadius: 24, style: .continuous)
   }
 }

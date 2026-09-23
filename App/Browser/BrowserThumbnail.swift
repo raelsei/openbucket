@@ -39,7 +39,7 @@ struct BrowserArtwork: View {
       if row.isImage || row.isVideo, let object = row.object {
         BrowserThumbnail(
           object: object, model: model, isVideo: row.isVideo, cache: cache,
-          contentMode: contentMode, symbolSize: symbolSize, showsVideoBadge: showsVideoBadge
+          contentMode: contentMode, symbolSize: symbolSize
         )
       } else {
         Image(systemName: row.symbol)
@@ -48,6 +48,15 @@ struct BrowserArtwork: View {
       }
     }
     .clipShape(.rect(cornerRadius: cornerRadius))
+    .overlay(alignment: .bottomTrailing) {
+      if row.isVideo && showsVideoBadge {
+        Image(systemName: "play.fill")
+          .padding(8)
+          .background(.regularMaterial, in: Circle())
+          .padding(8)
+          .accessibilityHidden(true)
+      }
+    }
   }
 }
 
@@ -58,7 +67,6 @@ struct BrowserThumbnail: View {
   let cache: ThumbnailCache
   var contentMode: ContentMode = .fill
   var symbolSize: CGFloat = 42
-  var showsVideoBadge = true
 
   @State private var image: NSImage?
   @State private var loadedKey: String?
@@ -71,14 +79,6 @@ struct BrowserThumbnail: View {
           .aspectRatio(contentMode: contentMode)
           .frame(maxWidth: .infinity, maxHeight: .infinity)
           .transition(.opacity)
-          .overlay(alignment: .bottomTrailing) {
-            if isVideo && showsVideoBadge {
-              Image(systemName: "play.fill")
-                .padding(8)
-                .background(.regularMaterial, in: Circle())
-                .padding(8)
-            }
-          }
       } else {
         Image(systemName: isVideo ? "play.rectangle" : "photo")
           .font(.system(size: symbolSize, weight: .light))

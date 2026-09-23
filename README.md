@@ -1,84 +1,97 @@
+<div align="center">
+
+<img src="App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128.png" width="88" alt="OpenBucket app icon">
+
 # OpenBucket
 
-OpenBucket is a native macOS 26+ app for browsing Amazon S3 and compatible object stores. It uses SwiftUI and the system Liquid Glass appearance. The current milestone is read-only: connect, discover buckets when permitted, browse a known bucket directly, navigate object-key prefixes, and preview objects.
+**A native S3 browser for macOS. See your objects, inspect media, and download what you need.**
 
-## What works today
+![macOS 26+](https://img.shields.io/badge/macOS-26%2B-18181b?logo=apple&logoColor=white)
+![Swift 6](https://img.shields.io/badge/Swift-6-f05138?logo=swift&logoColor=white)
+![S3 focused](https://img.shields.io/badge/S3-focused-54b6cb)
+![MIT license](https://img.shields.io/badge/license-MIT-8b8bd4)
 
-- Multiple connection profiles with custom HTTP or HTTPS endpoint, region, and addressing style.
-- Known-bucket access without requiring `ListBuckets` permission.
-- Access key, secret key, and optional session token in macOS Keychain. The profile file contains only settings and a credential reference.
-- `ListObjectsV2` with `/` delimiter and on-demand infinite scrolling. Each request fetches at most 500 entries; earlier entries remain visible while the next page loads.
-- Grid and native macOS table layouts. The table supports column sorting and per-file selection checkboxes; grid selection mode supports choosing several files. Sorting and "Select All Loaded" apply only to objects fetched so far. Clicking a file row opens a right-side inspector with metadata and image or video artwork for objects up to 8 MB. Its Preview button opens macOS Quick Look for objects up to 64 MB; its Download button saves the full object to a chosen local file using a bounded-memory stream. Large objects retain a type icon and metadata without automatic content transfer.
-- Download selected files into a new local export folder with progress, cancellation, and per-file failure reporting. Sanitized filename collisions receive unique names instead of overwriting another selected file.
-- Direct `s3://bucket/prefix/` navigation, refresh, object details, and clear loading and failure states.
-- Path-style S3 against Garage 2.4.1, including a nested prefix, verified with an isolated local fixture.
+<img src="docs/media/openbucket-hero.png" width="100%" alt="Glass bucket holding image and document objects">
 
-Quick Look uses a temporary local copy and removes it when the preview closes. Uploads, deletion, synchronization, Finder mounting, and non-S3 protocols are not part of this milestone.
+</div>
 
-## Local credential storage
+OpenBucket is an early, read-only macOS app for Amazon S3 and S3-compatible object stores. It uses SwiftUI, the macOS 26 Liquid Glass appearance, and [Soto](https://github.com/soto-project/soto) behind a replaceable S3 adapter. It stays focused on S3 rather than adding unrelated file protocols.
 
-There is no app database. Non-secret profile settings live in `~/Library/Application Support/OpenBucket/profiles.json` with user-only file permissions; the containing directory is user-only too. The JSON stores a random Keychain reference, never the access key or secret. Secrets live in macOS Keychain as a generic password item. The store prefers the data-protection Keychain with `WhenUnlockedThisDeviceOnly` and reads older login-Keychain items for migration. This repository currently builds an unsigned debug app, so macOS denies data-protection Keychain access and the app falls back to the login Keychain. A signed release must configure and verify the required Keychain entitlement before claiming the stronger accessibility setting.
+## See it in action
 
-Automatic thumbnails and Quick Look copies are kept in private temporary directories and deleted after use. A crash may leave a temporary preview file until the operating system cleans its temporary directory.
+The screenshots show a real OpenBucket window connected to a local Garage bucket with the [included demo objects](#demo-data).
 
-Downloads are written to a private temporary file beside the chosen destination and moved into place only after the transfer completes. A failed or canceled transfer leaves an existing destination intact.
+![Grid view showing S3 image and video objects with a right-side information panel](docs/media/browser-grid.jpg)
 
-A batch download creates a new `OpenBucket Export-*` folder inside the chosen directory. Completed files remain there if another file fails or the batch is canceled. The result bar can reveal the folder in Finder and copy the keys that failed.
+![List view showing per-file selection, sorting, and batch download controls](docs/media/browser-list.jpg)
 
-## Endpoint paths
+## What works
 
-The endpoint URL path and the object-key prefix are separate. For example, `https://store.example.com/s3/` with bucket `photos` and path-style addressing sends a request under `/s3/photos`; `photos/2026/` in the starting-prefix field filters object keys inside that bucket. The adapter has a test that captures the signed SDK request path and checks this join. Percent-encoded endpoint paths are rejected because Soto can rewrite their bytes while constructing an S3 request.
+| Area | Current behavior |
+| --- | --- |
+| Connections | Multiple profiles, custom HTTP or HTTPS endpoints, region and addressing style, optional session token |
+| Restricted accounts | Open a known bucket without account-wide `ListBuckets` permission; start at a chosen object-key prefix |
+| Browsing | Grid and sortable native table, prefix navigation, direct `s3://bucket/prefix/` jump, refresh, incremental `ListObjectsV2` loading |
+| Media | Image and video thumbnails; metadata and artwork in the Info panel; Quick Look preview on demand |
+| Downloads | Single-object download and per-file selection for batch download, with progress, cancellation, and failed-key reporting |
+| Secrets | Access keys and session tokens in macOS Keychain; non-secret connection settings in a user-only profile file |
 
-Soto uses path-style addressing for custom endpoints by default. Virtual-host addressing works with a pathless endpoint, such as `https://store.example.com`; the app rejects virtual-host addressing with an endpoint path because Soto produces an incompatible URL for that combination. Soto selects virtual-host addressing for Amazon endpoints even when a regular bucket is configured for explicit path style; the app reports this unsupported combination instead of silently changing the request. A path-aware S3 gateway must receive the same path that was signed. The request-path test does not establish compatibility with a proxy that rewrites the path.
+Browsing, inspection, previews, and downloads do not modify S3 objects. Upload, delete, sync, Finder mounting, and non-S3 protocols are outside this preview. [Compatibility details](docs/compatibility.md) document endpoint paths and provider test status; [security details](docs/security.md) explain local storage and temporary files.
 
-Listings request S3 URL encoding for keys that XML cannot represent. Returned keys and prefixes are decoded once only when the service marks the response as URL encoded; literal percent signs in object keys remain intact.
+## Get started
 
-## Build
+You need **macOS 26 or later** and **Xcode 27**. Open `OpenBucket.xcodeproj`, select the `OpenBucket` scheme, and run it on your Mac.
 
-Requirements: macOS 26 or later and Xcode 27. The committed `OpenBucket.xcodeproj` can be opened directly in Xcode. To regenerate it after editing `project.yml`, install XcodeGen and run:
+1. Choose **Add Connection**.
+2. Enter the S3 endpoint URL and region. For a custom service such as Garage, choose **Path style** if its buckets live beneath the endpoint path.
+3. Enter an access key and secret. Set **Known bucket** when the key cannot list all buckets. **Object key prefix** is an optional starting folder inside that bucket.
+4. Test the connection, save it, and browse. Use the toolbar's location action to jump directly to `s3://bucket/prefix/`.
+
+The endpoint URL path and object-key prefix are separate. For example, endpoint `https://store.example.com/s3/`, known bucket `photos`, and prefix `2026/travel/` address objects under the bucket without dropping `/s3/` from the signed request. A proxy must preserve the signed request path. See [endpoint behavior](docs/compatibility.md#endpoint-paths).
+
+## Demo data
+
+The repository includes six small demo objects in [`docs/demo-assets/travel`](docs/demo-assets/travel) and an opt-in [seed script](scripts/seed-demo.sh). It uploads them to a **bucket you specify**, under `openbucket-demo/travel/` by default; set `OPENBUCKET_DEMO_PREFIX` to choose another isolated prefix. The script needs `curl` with SigV4 support and these environment variables:
+
+| Variable | Example or purpose |
+| --- | --- |
+| `OPENBUCKET_DEMO_ENDPOINT` | `http://127.0.0.1:3900` |
+| `OPENBUCKET_DEMO_REGION` | `garage` or your provider's region |
+| `OPENBUCKET_DEMO_BUCKET` | An existing bucket you can write to |
+| `OPENBUCKET_DEMO_ACCESS_KEY` | Access key ID |
+| `OPENBUCKET_DEMO_SECRET_KEY` | Secret access key |
+| `OPENBUCKET_DEMO_PREFIX` | Optional destination prefix |
+
+After setting them in your shell, run `scripts/seed-demo.sh` and open the printed `s3://` location in OpenBucket. The script replaces any objects with the same six names under that prefix, so use a disposable location. Credentials and local profile files are never part of the repository. The README screenshots use `showcase/gallery/` in an isolated local Garage fixture.
+
+## Build and test
+
+The Xcode project is committed. [XcodeGen](https://github.com/yonaskolb/XcodeGen) is needed only after changing `project.yml`:
 
 ```sh
 xcodegen generate --spec project.yml
 ```
 
-Command-line build and tests:
-
 ```sh
-xcodebuild -project OpenBucket.xcodeproj -scheme OpenBucket -destination 'platform=macOS' -derivedDataPath DerivedData build
-xcodebuild -project OpenBucket.xcodeproj -scheme OpenBucket -destination 'platform=macOS' -derivedDataPath DerivedData test
+swift format lint --strict --recursive App AppTests Packages/OpenBucket/Sources Packages/OpenBucket/Tests
+xcodebuild test -project OpenBucket.xcodeproj -scheme OpenBucket -destination 'platform=macOS' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
 swift test --package-path Packages/OpenBucket
 ```
 
-Swift Package Manager resolves Soto 7.15.0 and its transitive dependencies on the first build. No AWS account is required for the unit tests.
+Unit tests need no AWS account. The optional live S3 test uses an isolated bucket and environment variables documented in [compatibility testing](docs/compatibility.md#live-compatibility-test). GitHub Actions runs format checks and app tests on an Xcode 27 runner.
 
-## Optional S3 integration test
+## How the code is organized
 
-The provider-neutral integration test is skipped unless these environment variables are set:
-
-```text
-OPENBUCKET_TEST_ENDPOINT
-OPENBUCKET_TEST_REGION
-OPENBUCKET_TEST_BUCKET
-OPENBUCKET_TEST_ACCESS_KEY
-OPENBUCKET_TEST_SECRET_KEY
-OPENBUCKET_TEST_PREFIX
-OPENBUCKET_TEST_EXPECT_KEY
+```mermaid
+flowchart LR
+    UI[SwiftUI app] --> Core[OpenBucketCore]
+    UI --> Local[Profiles + Keychain]
+    Core --> Port[S3Repository protocol]
+    Port --> Adapter[OpenBucketS3 adapter]
+    Adapter --> Soto[Soto]
+    Soto --> Store[(S3 endpoint)]
 ```
 
-Use an isolated test bucket with an existing object under the chosen prefix, then run:
+`OpenBucketCore` owns S3 values and browsing state. `OpenBucketS3` adapts Soto and keeps SDK types outside the UI. `App` contains SwiftUI and macOS storage; `OpenBucketApp` wires them together. The adapter boundary allows the SDK implementation to change without reshaping the browser.
 
-```sh
-swift test --package-path Packages/OpenBucket --filter listsKnownBucketAndNestedPrefix
-```
-
-Run the same case against each S3-compatible provider under evaluation. Garage 2.4.1 is verified; MinIO and RustFS still need a live compatibility run.
-
-Do not add credentials or a credential-bearing test script to this repository.
-
-## Code map
-
-`OpenBucketCore` owns S3 values, the read-only repository port, and cancellable browsing state. `OpenBucketS3` adapts Soto S3 and keeps SDK types outside the app. `App` contains SwiftUI and the macOS profile and Keychain stores. `OpenBucketApp` is the composition root.
-
-The first adapter candidate was the official AWS SDK for Swift. SwiftPM attempted to fetch its approximately 2.4 GB repository and did not complete within 18 minutes on this development machine. Soto resolved and passed the Garage and endpoint-path tests. The adapter boundary allows the SDK choice to change without rewriting views or the S3 domain.
-
-OpenBucket is licensed under the MIT License; see `LICENSE`.
+Contributions are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md). [Visual asset sources](docs/ASSETS.md) are documented. OpenBucket is licensed under [MIT](LICENSE).

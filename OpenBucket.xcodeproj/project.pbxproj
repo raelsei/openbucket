@@ -26,6 +26,7 @@
 		A51FCA0293CF9A3FC2F34B14 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E53802465FE31616C866F0 /* AppModel.swift */; };
 		C826489C8EA4AB91CBEB137B /* ObjectTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D64BE089D18AA0396391CE1 /* ObjectTableView.swift */; };
 		D80C11FA476E02E511653697 /* BrowserThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A0DB88793D9A81759A4BF8 /* BrowserThumbnail.swift */; };
+		E4212E389D40A90874DFA701 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 92EFCC703C8816C7CE7E7352 /* Assets.xcassets */; };
 		F651B51B789D257D6C31F054 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537FEEA76A1D05CD100C79BA /* AppModelTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +52,7 @@
 		64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBucketApp.swift; sourceTree = "<group>"; };
 		711BEF07C60DBC90F3B3DE9C /* OpenBucket */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OpenBucket; path = Packages/OpenBucket; sourceTree = SOURCE_ROOT; };
 		7D64BE089D18AA0396391CE1 /* ObjectTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectTableView.swift; sourceTree = "<group>"; };
+		92EFCC703C8816C7CE7E7352 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9941E58DA85DE0307ACBE866 /* PreviewFileNameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFileNameTests.swift; sourceTree = "<group>"; };
 		A9E53802465FE31616C866F0 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBrowserView.swift; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 				64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */,
 				4A1342BBDDA65166643C9D50 /* Browser */,
 				87883C5C8813EE1C07F8AF59 /* Connections */,
+				67CD54E60177F4ADECDB1296 /* Resources */,
 				C93A6001A89F15BC0E386BFF /* Storage */,
 			);
 			path = App;
@@ -131,6 +134,14 @@
 				C0E2B0C26FE30A89B9FC43E6 /* PreviewFileName.swift */,
 			);
 			path = Browser;
+			sourceTree = "<group>";
+		};
+		67CD54E60177F4ADECDB1296 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				92EFCC703C8816C7CE7E7352 /* Assets.xcassets */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		87883C5C8813EE1C07F8AF59 /* Connections */ = {
@@ -185,6 +196,7 @@
 			buildConfigurationList = F11F974F3BA12DF710CFCF0C /* Build configuration list for PBXNativeTarget "OpenBucket" */;
 			buildPhases = (
 				19D0784EF3968BA30BF147C3 /* Sources */,
+				B7F462DCEF178711165A550A /* Resources */,
 				4011EB9DA23F995391EB75A9 /* Frameworks */,
 			);
 			buildRules = (
@@ -233,6 +245,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B7F462DCEF178711165A550A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4212E389D40A90874DFA701 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		19D0784EF3968BA30BF147C3 /* Sources */ = {
