@@ -17,6 +17,10 @@
 
 OpenBucket is an early, read-only macOS app for Amazon S3 and S3-compatible object stores. It uses SwiftUI, the macOS 26 Liquid Glass appearance, and [Soto](https://github.com/soto-project/soto) behind a replaceable S3 adapter. It stays focused on S3 rather than adding unrelated file protocols.
 
+## Download
+
+Signed and notarized macOS builds will be published on [GitHub Releases](https://github.com/raelsei/openbucket/releases). There is no downloadable app release yet; until the first release, build from source using the steps below. A release will contain one universal (Apple silicon and Intel) `OpenBucket` DMG and its SHA-256 checksum. Open the DMG, drag OpenBucket to Applications, and launch it there. See [how releases are prepared](docs/RELEASING.md).
+
 ## See it in action
 
 The screenshots show a real OpenBucket window connected to a local Garage bucket with the [included demo objects](#demo-data).
