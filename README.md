@@ -8,7 +8,8 @@ OpenBucket is a native macOS 26+ app for browsing Amazon S3 and compatible objec
 - Known-bucket access without requiring `ListBuckets` permission.
 - Access key, secret key, and optional session token in macOS Keychain. The profile file contains only settings and a credential reference.
 - `ListObjectsV2` with `/` delimiter and on-demand infinite scrolling. Each request fetches at most 500 entries; earlier entries remain visible while the next page loads.
-- Grid and list layouts. Selecting a file opens a right-side inspector with metadata and image or video artwork for objects up to 8 MB. Its Preview button opens macOS Quick Look for objects up to 64 MB; its Download button saves the full object to a chosen local file using a bounded-memory stream. Large objects retain a type icon and metadata without automatic content transfer.
+- Grid and native macOS table layouts. The table supports column sorting and multiple selection; grid selection mode supports choosing several files. Sorting and "Select Loaded" apply only to objects fetched so far. Selecting one file opens a right-side inspector with metadata and image or video artwork for objects up to 8 MB. Its Preview button opens macOS Quick Look for objects up to 64 MB; its Download button saves the full object to a chosen local file using a bounded-memory stream. Large objects retain a type icon and metadata without automatic content transfer.
+- Download selected files into a new local export folder with progress, cancellation, and per-file failure reporting. Sanitized filename collisions receive unique names instead of overwriting another selected file.
 - Direct `s3://bucket/prefix/` navigation, refresh, object details, and clear loading and failure states.
 - Path-style S3 against Garage 2.4.1, including a nested prefix, verified with an isolated local fixture.
 
@@ -21,6 +22,8 @@ There is no app database. Non-secret profile settings live in `~/Library/Applica
 Automatic thumbnails and Quick Look copies are kept in private temporary directories and deleted after use. A crash may leave a temporary preview file until the operating system cleans its temporary directory.
 
 Downloads are written to a private temporary file beside the chosen destination and moved into place only after the transfer completes. A failed or canceled transfer leaves an existing destination intact.
+
+A batch download creates a new `OpenBucket Export-*` folder inside the chosen directory. Completed files remain there if another file fails or the batch is canceled. The result bar can reveal the folder in Finder and copy the keys that failed.
 
 ## Endpoint paths
 
@@ -50,7 +53,7 @@ Swift Package Manager resolves Soto 7.15.0 and its transitive dependencies on th
 
 ## Optional S3 integration test
 
-The Garage integration test is skipped unless these environment variables are set:
+The provider-neutral integration test is skipped unless these environment variables are set:
 
 ```text
 OPENBUCKET_TEST_ENDPOINT
@@ -65,8 +68,10 @@ OPENBUCKET_TEST_EXPECT_KEY
 Use an isolated test bucket with an existing object under the chosen prefix, then run:
 
 ```sh
-swift test --package-path Packages/OpenBucket --filter listsKnownGarageBucketAndNestedPrefix
+swift test --package-path Packages/OpenBucket --filter listsKnownBucketAndNestedPrefix
 ```
+
+Run the same case against each S3-compatible provider under evaluation. Garage 2.4.1 is verified; MinIO and RustFS still need a live compatibility run.
 
 Do not add credentials or a credential-bearing test script to this repository.
 

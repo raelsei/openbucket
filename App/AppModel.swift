@@ -20,6 +20,8 @@ final class AppModel {
   @ObservationIgnored private let profileStore: ProfileStore
   @ObservationIgnored private let credentialStore: any CredentialStore
   @ObservationIgnored private var connectionTask: Task<Void, Never>?
+  @ObservationIgnored private var pageRequestTask: Task<Void, Never>?
+  @ObservationIgnored private var pageRequestID: UUID?
   @ObservationIgnored private var generation = 0
 
   init(
@@ -90,6 +92,9 @@ final class AppModel {
   func selectProfile(_ id: UUID?) {
     generation &+= 1
     connectionTask?.cancel()
+    pageRequestTask?.cancel()
+    pageRequestTask = nil
+    pageRequestID = nil
     browser.cancel()
     selectedProfileID = id
     buckets = []
@@ -123,6 +128,9 @@ final class AppModel {
     guard let profile = selectedProfile else { return }
     generation &+= 1
     connectionTask?.cancel()
+    pageRequestTask?.cancel()
+    pageRequestTask = nil
+    pageRequestID = nil
     connectionFailure = nil
     let requestGeneration = generation
     isConnecting = true
@@ -146,9 +154,21 @@ final class AppModel {
   }
 
   func loadNextPage() {
-    guard let profile = selectedProfile else { return }
+    guard let profile = selectedProfile,
+      browser.nextToken != nil,
+      !browser.isLoading,
+      pageRequestTask == nil
+    else { return }
     let requestGeneration = generation
-    Task {
+    let requestID = UUID()
+    pageRequestID = requestID
+    pageRequestTask = Task {
+      defer {
+        if pageRequestID == requestID {
+          pageRequestTask = nil
+          pageRequestID = nil
+        }
+      }
       do {
         let credentials = try await credentialStore.load(reference: profile.credentialReference)
         guard requestGeneration == generation, !Task.isCancelled else { return }
@@ -188,6 +208,20 @@ final class AppModel {
       key: object.key,
       to: destination,
       maximumBytes: maximumBytes
+    )
+  }
+
+  func downloadSelected(
+    _ objects: [ObjectSummary],
+    from source: DownloadSource,
+    into directory: URL,
+    progress: (BatchDownloadProgress) -> Void
+  ) async throws -> BatchDownloadResult {
+    let credentials = try await credentialStore.load(reference: source.profile.credentialReference)
+    try Task.checkCancellation()
+    return try await BatchDownloader(repository: repository).download(
+      objects, profile: source.profile, credentials: credentials, bucket: source.bucket,
+      into: directory, progress: progress
     )
   }
 

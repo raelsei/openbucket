@@ -6,6 +6,7 @@ struct BrowserGridCard: View {
   let model: AppModel
   let thumbnailCache: ThumbnailCache
   let isSelected: Bool
+  let selectionMode: Bool
   let open: () -> Void
   let inspect: () -> Void
   @State private var hovered = false
@@ -14,6 +15,15 @@ struct BrowserGridCard: View {
     Button(action: open) {
       VStack(alignment: .leading, spacing: 8) {
         artwork
+          .overlay(alignment: .topTrailing) {
+            if selectionMode, row.object != nil {
+              Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.title2)
+                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                .padding(8)
+                .accessibilityHidden(true)
+            }
+          }
         Text(row.name).font(.body.weight(.medium)).lineLimit(1)
         if let object = row.object {
           Text(
@@ -38,7 +48,12 @@ struct BrowserGridCard: View {
     )
     .onHover { hovered = $0 }
     .accessibilityLabel("\(row.name), \(row.prefix == nil ? "object" : "folder")")
-    .accessibilityHint(row.prefix == nil ? "Show object information" : "Open folder")
+    .accessibilityHint(
+      row.prefix == nil
+        ? selectionMode ? "Toggle selection" : "Show object information"
+        : "Open folder"
+    )
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
     .contextMenu {
       if row.object != nil { Button("Get Info", action: inspect) }
     }

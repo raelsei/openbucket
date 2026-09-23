@@ -5,7 +5,7 @@ import Testing
 @testable import OpenBucketS3
 
 @Test(.enabled(if: ProcessInfo.processInfo.environment["OPENBUCKET_TEST_ENDPOINT"] != nil))
-func listsKnownGarageBucketAndNestedPrefix() async throws {
+func listsKnownBucketAndNestedPrefix() async throws {
   let environment = ProcessInfo.processInfo.environment
   let endpoint = try #require(environment["OPENBUCKET_TEST_ENDPOINT"])
   let region = try #require(environment["OPENBUCKET_TEST_REGION"])
@@ -15,7 +15,7 @@ func listsKnownGarageBucketAndNestedPrefix() async throws {
   let prefix = try #require(environment["OPENBUCKET_TEST_PREFIX"])
   let expectedKey = try #require(environment["OPENBUCKET_TEST_EXPECT_KEY"])
   let profile = ConnectionProfile(
-    name: "Integration Garage",
+    name: "Integration S3",
     endpoint: try S3Endpoint(endpoint),
     region: region,
     addressingStyle: .path,

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		055FA9199BEBEA3C0BE4C87F /* PreviewFileNameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9941E58DA85DE0307ACBE866 /* PreviewFileNameTests.swift */; };
+		05EDC92FD9AD7F4B22CEC2C0 /* BatchDownloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D492F8D03CFE403B612D08 /* BatchDownloaderTests.swift */; };
 		09C760ABD3138CD34B53B278 /* BrowserRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FFFFDC367949AA81A87841 /* BrowserRow.swift */; };
 		15A16CB5F322D02535AED277 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA5F357829EB81D59F69654 /* ContentView.swift */; };
 		1C564A3BBFEBD322051CDC1D /* ObjectInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A752271B4BBFDFACCA08E36 /* ObjectInspectorView.swift */; };
@@ -17,12 +18,13 @@
 		487B3D81F668001D75058D5D /* OpenBucketCore in Frameworks */ = {isa = PBXBuildFile; productRef = 887403CD20B5EBC385904939 /* OpenBucketCore */; };
 		5085DB8C7173D9BBCFF0523C /* OpenBucketApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */; };
 		6AA5FF8C29DBD96854F64373 /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D892EF569D3EA2E8A2236C7A /* ProfileStore.swift */; };
-		6F9590E33645726EE2015571 /* BrowserListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394568076334217AF459EB10 /* BrowserListRow.swift */; };
 		7FED78FBAC2BA182C03E1CDD /* PreviewFileName.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E2B0C26FE30A89B9FC43E6 /* PreviewFileName.swift */; };
+		8111B49B392055E29D326866 /* BatchDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B385C52E15190191826676 /* BatchDownloader.swift */; };
 		820E7F421BE9DD72CC7AD2D3 /* KeychainCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFE9CC622E1E0D826A5A2818 /* KeychainCredentialStore.swift */; };
 		985534263FD98CFF6B847369 /* StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FC01D86217CC165F100A40 /* StorageTests.swift */; };
 		A2B30E7553E514A25A7783B8 /* ObjectBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */; };
 		A51FCA0293CF9A3FC2F34B14 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E53802465FE31616C866F0 /* AppModel.swift */; };
+		C826489C8EA4AB91CBEB137B /* ObjectTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D64BE089D18AA0396391CE1 /* ObjectTableView.swift */; };
 		D80C11FA476E02E511653697 /* BrowserThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A0DB88793D9A81759A4BF8 /* BrowserThumbnail.swift */; };
 		F651B51B789D257D6C31F054 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537FEEA76A1D05CD100C79BA /* AppModelTests.swift */; };
 /* End PBXBuildFile section */
@@ -39,7 +41,6 @@
 
 /* Begin PBXFileReference section */
 		18FFFFDC367949AA81A87841 /* BrowserRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserRow.swift; sourceTree = "<group>"; };
-		394568076334217AF459EB10 /* BrowserListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserListRow.swift; sourceTree = "<group>"; };
 		39906F4FFCB7FBD884F76912 /* OpenBucket.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenBucket.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		40A0DB88793D9A81759A4BF8 /* BrowserThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserThumbnail.swift; sourceTree = "<group>"; };
 		4BA5F357829EB81D59F69654 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -49,11 +50,14 @@
 		5BD851FFC71E254416662CC6 /* BrowserGridCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserGridCard.swift; sourceTree = "<group>"; };
 		64F931CDEAE87B61EDA971BE /* OpenBucketApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenBucketApp.swift; sourceTree = "<group>"; };
 		711BEF07C60DBC90F3B3DE9C /* OpenBucket */ = {isa = PBXFileReference; lastKnownFileType = folder; name = OpenBucket; path = Packages/OpenBucket; sourceTree = SOURCE_ROOT; };
+		7D64BE089D18AA0396391CE1 /* ObjectTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectTableView.swift; sourceTree = "<group>"; };
 		9941E58DA85DE0307ACBE866 /* PreviewFileNameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFileNameTests.swift; sourceTree = "<group>"; };
 		A9E53802465FE31616C866F0 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBrowserView.swift; sourceTree = "<group>"; };
 		BD4E870664208E516FCC2697 /* OpenBucketTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenBucketTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0E2B0C26FE30A89B9FC43E6 /* PreviewFileName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFileName.swift; sourceTree = "<group>"; };
+		C1B385C52E15190191826676 /* BatchDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchDownloader.swift; sourceTree = "<group>"; };
+		C9D492F8D03CFE403B612D08 /* BatchDownloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchDownloaderTests.swift; sourceTree = "<group>"; };
 		D1FC01D86217CC165F100A40 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
 		D892EF569D3EA2E8A2236C7A /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
 		FFE9CC622E1E0D826A5A2818 /* KeychainCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialStore.swift; sourceTree = "<group>"; };
@@ -76,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				537FEEA76A1D05CD100C79BA /* AppModelTests.swift */,
+				C9D492F8D03CFE403B612D08 /* BatchDownloaderTests.swift */,
 				9941E58DA85DE0307ACBE866 /* PreviewFileNameTests.swift */,
 				D1FC01D86217CC165F100A40 /* StorageTests.swift */,
 			);
@@ -116,12 +121,13 @@
 		4A1342BBDDA65166643C9D50 /* Browser */ = {
 			isa = PBXGroup;
 			children = (
+				C1B385C52E15190191826676 /* BatchDownloader.swift */,
 				5BD851FFC71E254416662CC6 /* BrowserGridCard.swift */,
-				394568076334217AF459EB10 /* BrowserListRow.swift */,
 				18FFFFDC367949AA81A87841 /* BrowserRow.swift */,
 				40A0DB88793D9A81759A4BF8 /* BrowserThumbnail.swift */,
 				B60D4E8CC17F9615D66E9AF7 /* ObjectBrowserView.swift */,
 				5A752271B4BBFDFACCA08E36 /* ObjectInspectorView.swift */,
+				7D64BE089D18AA0396391CE1 /* ObjectTableView.swift */,
 				C0E2B0C26FE30A89B9FC43E6 /* PreviewFileName.swift */,
 			);
 			path = Browser;
@@ -234,8 +240,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A51FCA0293CF9A3FC2F34B14 /* AppModel.swift in Sources */,
+				8111B49B392055E29D326866 /* BatchDownloader.swift in Sources */,
 				2F47367288B737107B0DD557 /* BrowserGridCard.swift in Sources */,
-				6F9590E33645726EE2015571 /* BrowserListRow.swift in Sources */,
 				09C760ABD3138CD34B53B278 /* BrowserRow.swift in Sources */,
 				D80C11FA476E02E511653697 /* BrowserThumbnail.swift in Sources */,
 				1EBFD07A91677539D164286A /* ConnectionEditor.swift in Sources */,
@@ -243,6 +249,7 @@
 				820E7F421BE9DD72CC7AD2D3 /* KeychainCredentialStore.swift in Sources */,
 				A2B30E7553E514A25A7783B8 /* ObjectBrowserView.swift in Sources */,
 				1C564A3BBFEBD322051CDC1D /* ObjectInspectorView.swift in Sources */,
+				C826489C8EA4AB91CBEB137B /* ObjectTableView.swift in Sources */,
 				5085DB8C7173D9BBCFF0523C /* OpenBucketApp.swift in Sources */,
 				7FED78FBAC2BA182C03E1CDD /* PreviewFileName.swift in Sources */,
 				6AA5FF8C29DBD96854F64373 /* ProfileStore.swift in Sources */,
@@ -254,6 +261,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F651B51B789D257D6C31F054 /* AppModelTests.swift in Sources */,
+				05EDC92FD9AD7F4B22CEC2C0 /* BatchDownloaderTests.swift in Sources */,
 				055FA9199BEBEA3C0BE4C87F /* PreviewFileNameTests.swift in Sources */,
 				985534263FD98CFF6B847369 /* StorageTests.swift in Sources */,
 			);

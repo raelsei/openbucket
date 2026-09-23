@@ -14,6 +14,9 @@ struct BrowserRow: Identifiable {
   let prefix: String?
   let object: ObjectSummary?
 
+  var sortSize: Int64 { object?.size ?? -1 }
+  var sortModified: Date { object?.lastModified ?? .distantPast }
+
   var kindLabel: String {
     if prefix != nil { return "Folder" }
     return switch symbol {

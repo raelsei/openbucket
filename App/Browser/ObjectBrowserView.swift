@@ -19,6 +19,13 @@ struct ObjectBrowserView: View {
   @State private var previewRequestID: UUID?
   @State private var previewError: String?
   @State private var isPreparingPreview = false
+  @State private var selectedIDs = Set<BrowserRow.ID>()
+  @State private var sortOrder = [KeyPathComparator(\BrowserRow.name)]
+  @State private var isSelectingGrid = false
+  @State private var batchTask: Task<Void, Never>?
+  @State private var batchProgress: BatchDownloadProgress?
+  @State private var batchResult: BatchDownloadResult?
+  @State private var batchMessage: String?
 
   var body: some View {
     VStack(spacing: 0) {
@@ -93,8 +100,10 @@ struct ObjectBrowserView: View {
                       ForEach(group.items) { row in
                         BrowserGridCard(
                           row: row, model: model, thumbnailCache: thumbnailCache,
-                          isSelected: showsInspector && inspectedRow?.id == row.id,
-                          open: { open(row) }, inspect: { inspect(row) }
+                          isSelected: selectedIDs.contains(row.id)
+                            || (showsInspector && inspectedRow?.id == row.id),
+                          selectionMode: isSelectingGrid,
+                          open: { gridAction(row) }, inspect: { inspect(row) }
                         )
                         .frame(maxWidth: .infinity)
                       }
@@ -104,7 +113,11 @@ struct ObjectBrowserView: View {
                     }
                     .accessibilityActions {
                       ForEach(group.items) { row in
-                        Button("Open \(row.name)") { open(row) }
+                        Button(
+                          isSelectingGrid && row.object != nil
+                            ? "\(selectedIDs.contains(row.id) ? "Deselect" : "Select") \(row.name)"
+                            : "Open \(row.name)"
+                        ) { gridAction(row) }
                       }
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
@@ -122,43 +135,30 @@ struct ObjectBrowserView: View {
               }
             }
           } else {
-            GeometryReader { geometry in
-              let compact = geometry.size.width < 620
-              VStack(spacing: 0) {
-                BrowserListHeader(compact: compact)
-                  .padding(.horizontal, 16)
-                Divider()
-                ScrollViewReader { scroll in
-                  List {
-                    ForEach(rows) { row in
-                      BrowserListRow(
-                        row: row, model: model, thumbnailCache: thumbnailCache,
-                        compact: compact, isSelected: showsInspector && inspectedRow?.id == row.id,
-                        open: { open(row) }, inspect: { inspect(row) }
-                      )
-                      .listRowInsets(EdgeInsets(top: 3, leading: 16, bottom: 3, trailing: 16))
-                      .listRowSeparator(.hidden)
-                    }
-                    if let token = model.browser.nextToken {
-                      loadMore(token).listRowSeparator(.hidden)
-                    }
-                  }
-                  .listStyle(.plain)
-                  .onChange(of: rows.first?.id) { _, firstID in
-                    if let firstID { scrollToTop(firstID, using: scroll) }
-                  }
-                }
-              }
-            }
+            ObjectTableView(
+              rows: rows, model: model, thumbnailCache: thumbnailCache,
+              nextToken: model.browser.nextToken, selection: $selectedIDs,
+              sortOrder: $sortOrder, loadNextPage: model.loadNextPage
+            )
           }
         }
+      }
+    }
+    .safeAreaInset(edge: .bottom) {
+      if selectedIDs.count > 1 || isSelectingGrid
+        || batchProgress != nil || batchResult != nil || batchMessage != nil
+      {
+        selectionBar
       }
     }
     .inspector(isPresented: $showsInspector) {
       if let inspectedRow, let object = inspectedRow.object {
         ObjectInspectorView(
           row: inspectedRow, object: object, model: model, thumbnailCache: thumbnailCache,
-          close: { showsInspector = false }
+          close: {
+            showsInspector = false
+            if selectedIDs.count == 1 { selectedIDs.removeAll() }
+          }
         ) {
           preparePreview(object)
         }
@@ -178,6 +178,26 @@ struct ObjectBrowserView: View {
       clearPreview()
       inspectedRow = nil
       showsInspector = false
+      selectedIDs.removeAll()
+      isSelectingGrid = false
+    }
+    .onChange(of: selectedIDs) { _, selection in
+      guard layout == .list else { return }
+      guard selection.count == 1,
+        let id = selection.first,
+        let row = rows.first(where: { $0.id == id })
+      else {
+        showsInspector = false
+        return
+      }
+      if row.prefix != nil {
+        open(row)
+      } else {
+        inspect(row)
+      }
+    }
+    .onChange(of: Set(rows.map(\.id))) { _, availableIDs in
+      selectedIDs.formIntersection(availableIDs)
     }
   }
 
@@ -205,9 +225,25 @@ struct ObjectBrowserView: View {
           }
         }
       Spacer()
-      Text("\(model.browser.objects.count) objects")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+      Text(
+        "\(model.browser.objects.count) \(model.browser.objects.count == 1 ? "file" : "files") loaded"
+      )
+      .font(.caption)
+      .foregroundStyle(.secondary)
+      if layout == .grid, model.browser.objects.count > 1 {
+        Button(isSelectingGrid ? "Done" : "Select") {
+          isSelectingGrid.toggle()
+          if !isSelectingGrid { selectedIDs.removeAll() }
+        }
+        .buttonStyle(.glass)
+      } else if layout == .list, model.browser.objects.count > 1 {
+        Button("Select Loaded") {
+          selectedIDs = Set(rows.filter { $0.object != nil }.map(\.id))
+          showsInspector = false
+        }
+        .buttonStyle(.glass)
+        .help("Select all files loaded from this prefix")
+      }
       if isPreparingPreview || model.isConnecting || model.browser.isLoading {
         ProgressView().controlSize(.small)
       }
@@ -237,6 +273,123 @@ struct ObjectBrowserView: View {
       + model.browser.objects.map { BrowserRow(object: $0, parentPrefix: location.prefix) }
   }
 
+  private var selectedObjects: [ObjectSummary] {
+    rows.filter { selectedIDs.contains($0.id) }.compactMap(\.object)
+  }
+
+  private var selectionBar: some View {
+    GlassEffectContainer(spacing: 8) {
+      HStack(spacing: 12) {
+        if let batchProgress {
+          ProgressView(value: Double(batchProgress.completed), total: Double(batchProgress.total))
+            .frame(width: 120)
+          Text("\(batchProgress.completed) of \(batchProgress.total) processed")
+            .font(.callout)
+          Button("Cancel") { batchTask?.cancel() }
+            .buttonStyle(.glass)
+        } else if let batchResult {
+          Label(
+            "\(batchResult.cancelled ? "Stopped" : "Finished"): \(batchResult.downloaded) saved, \(batchResult.failedKeys.count) failed",
+            systemImage: batchResult.cancelled || !batchResult.failedKeys.isEmpty
+              ? "exclamationmark.triangle" : "checkmark.circle"
+          )
+          .font(.callout)
+          .lineLimit(1)
+          Spacer(minLength: 8)
+          if !batchResult.failedKeys.isEmpty {
+            Button("Copy Failed Keys") {
+              NSPasteboard.general.clearContents()
+              NSPasteboard.general.setString(
+                batchResult.failedKeys.joined(separator: "\n"), forType: .string)
+            }
+            .buttonStyle(.glass)
+          }
+          Button("Show in Finder") {
+            NSWorkspace.shared.activateFileViewerSelecting([batchResult.directory])
+          }
+          .buttonStyle(.glass)
+          Button("Dismiss") { self.batchResult = nil }
+            .buttonStyle(.glass)
+        } else if let batchMessage {
+          Label(batchMessage, systemImage: "exclamationmark.triangle")
+            .font(.callout)
+          Spacer(minLength: 8)
+          Button("Dismiss") { self.batchMessage = nil }
+            .buttonStyle(.glass)
+        } else {
+          Text(
+            "\(selectedObjects.count) loaded \(selectedObjects.count == 1 ? "file" : "files") selected"
+          )
+          .font(.callout)
+          Spacer(minLength: 8)
+          if isSelectingGrid {
+            Button("Select Loaded") {
+              selectedIDs = Set(rows.filter { $0.object != nil }.map(\.id))
+            }
+            .buttonStyle(.glass)
+          }
+          if !selectedIDs.isEmpty {
+            Button("Clear Selection") { selectedIDs.removeAll() }
+              .buttonStyle(.glass)
+          }
+          Button("Download Selected", systemImage: "arrow.down.to.line") {
+            chooseBatchDestination()
+          }
+          .buttonStyle(.glassProminent)
+          .disabled(selectedObjects.isEmpty)
+        }
+      }
+      .padding(10)
+      .frame(maxWidth: .infinity)
+      .glassEffect(.regular, in: .rect(cornerRadius: 16))
+      .padding(.horizontal, 16)
+      .padding(.bottom, 8)
+    }
+  }
+
+  private func chooseBatchDestination() {
+    guard !selectedObjects.isEmpty, let source = model.downloadSource() else { return }
+    let objects = selectedObjects
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.canCreateDirectories = true
+    panel.prompt = "Download"
+    panel.message = "OpenBucket will create a new folder for the selected files."
+    panel.begin { response in
+      guard response == .OK, let directory = panel.url else { return }
+      Task { @MainActor in
+        startBatchDownload(objects, from: source, into: directory)
+      }
+    }
+  }
+
+  private func startBatchDownload(
+    _ objects: [ObjectSummary], from source: AppModel.DownloadSource, into directory: URL
+  ) {
+    guard batchTask == nil else { return }
+    batchResult = nil
+    batchMessage = nil
+    batchProgress = BatchDownloadProgress(completed: 0, total: objects.count, failed: 0)
+    batchTask = Task {
+      let scoped = directory.startAccessingSecurityScopedResource()
+      defer {
+        if scoped { directory.stopAccessingSecurityScopedResource() }
+        batchProgress = nil
+        batchTask = nil
+      }
+      do {
+        let result = try await model.downloadSelected(objects, from: source, into: directory) {
+          batchProgress = $0
+        }
+        batchResult = result
+        selectedIDs.removeAll()
+      } catch {
+        batchMessage = AppModel.failure(for: error).message
+      }
+    }
+  }
+
   private func open(_ row: BrowserRow) {
     if let prefix = row.prefix,
       let bucket = model.browser.location?.bucket,
@@ -245,6 +398,15 @@ struct ObjectBrowserView: View {
       model.open(location)
     } else if row.object != nil {
       inspect(row)
+    }
+  }
+
+  private func gridAction(_ row: BrowserRow) {
+    if isSelectingGrid, row.object != nil {
+      if !selectedIDs.insert(row.id).inserted { selectedIDs.remove(row.id) }
+      showsInspector = false
+    } else {
+      open(row)
     }
   }
 
