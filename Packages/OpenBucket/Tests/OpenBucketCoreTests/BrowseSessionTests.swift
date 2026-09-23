@@ -89,6 +89,27 @@ private actor ControlledRepository: S3Repository {
   #expect(session.nextToken == "second")
 }
 
+@Test @MainActor func navigationKeepsCurrentRowsUntilNextFolderLoads() async throws {
+  let repository = ControlledRepository()
+  let session = BrowseSession(repository: repository)
+  let profile = try makeProfile()
+  let credentials = S3Credentials(accessKeyID: "test", secretAccessKey: "test")
+
+  session.navigate(profile: profile, credentials: credentials, to: try S3Location(bucket: "fast"))
+  for _ in 0..<100 where session.isLoading { await Task.yield() }
+  session.navigate(profile: profile, credentials: credentials, to: try S3Location(bucket: "slow"))
+  for _ in 0..<100 where !(await repository.hasHeldRequest()) { await Task.yield() }
+
+  #expect(session.isLoading)
+  #expect(session.location?.bucket == "fast")
+  #expect(session.objects.map(\.key) == ["one"])
+
+  await repository.completeHeldRequest()
+  for _ in 0..<100 where session.isLoading { await Task.yield() }
+  #expect(session.location?.bucket == "slow")
+  #expect(session.objects.map(\.key) == ["stale"])
+}
+
 @Test @MainActor func scrollingAppendsTheNextPageOnce() async throws {
   let repository = ControlledRepository()
   let session = BrowseSession(repository: repository)

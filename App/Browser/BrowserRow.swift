@@ -14,6 +14,18 @@ struct BrowserRow: Identifiable {
   let prefix: String?
   let object: ObjectSummary?
 
+  var kindLabel: String {
+    if prefix != nil { return "Folder" }
+    return switch symbol {
+    case "photo": "Image"
+    case "play.rectangle": "Video"
+    case "waveform": "Audio"
+    case "doc.richtext": "PDF"
+    case "doc.text": "Text"
+    default: "File"
+    }
+  }
+
   var symbol: String {
     if prefix != nil { return "folder.fill" }
     guard let type = UTType(filenameExtension: (fullKey as NSString).pathExtension) else { return "doc" }

@@ -12,6 +12,7 @@ struct ObjectBrowserView: View {
 
   @State private var inspectedRow: BrowserRow?
   @State private var showsInspector = false
+  @State private var thumbnailCache = ThumbnailCache()
   @State private var previewURL: URL?
   @State private var previewDirectory: URL?
   @State private var previewTask: Task<Void, Never>?
@@ -27,8 +28,8 @@ struct ObjectBrowserView: View {
       }
       if let failure = model.connectionFailure ?? model.browser.failure, rows.isEmpty {
         failureView(failure)
-      } else if model.isConnecting
-        || (model.browser.isLoading && model.browser.objects.isEmpty && model.browser.prefixes.isEmpty)
+      } else if model.browser.location == nil
+        && (model.isConnecting || model.browser.isLoading)
       {
         ProgressView("Loading S3 contents…")
           .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,57 +84,84 @@ struct ObjectBrowserView: View {
         } else {
           if layout == .grid {
             GeometryReader { geometry in
-              let columns = max(1, Int((geometry.size.width - 24) / 240))
-              List {
-                ForEach(gridRows(columns: columns)) { group in
-                  HStack(alignment: .top, spacing: 16) {
-                    ForEach(group.items) { row in
-                      BrowserGridCard(row: row, model: model, open: { open(row) }, inspect: { inspect(row) })
+              let availableWidth = geometry.size.width + (showsInspector ? 360 : 0)
+              let columns = availableWidth < 560 ? 1 : availableWidth < 1000 ? 2 : 3
+              ScrollViewReader { scroll in
+                List {
+                  ForEach(gridRows(columns: columns)) { group in
+                    HStack(alignment: .top, spacing: 16) {
+                      ForEach(group.items) { row in
+                        BrowserGridCard(
+                          row: row, model: model, thumbnailCache: thumbnailCache,
+                          isSelected: showsInspector && inspectedRow?.id == row.id,
+                          open: { open(row) }, inspect: { inspect(row) }
+                        )
                         .frame(maxWidth: .infinity)
+                      }
+                      ForEach(0..<(columns - group.items.count), id: \.self) { _ in
+                        Color.clear.frame(maxWidth: .infinity)
+                      }
                     }
-                    ForEach(0..<(columns - group.items.count), id: \.self) { _ in
-                      Color.clear.frame(maxWidth: .infinity)
+                    .accessibilityActions {
+                      ForEach(group.items) { row in
+                        Button("Open \(row.name)") { open(row) }
+                      }
                     }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                   }
-                  .accessibilityActions {
-                    ForEach(group.items) { row in
-                      Button("Open \(row.name)") { open(row) }
-                    }
+                  if let token = model.browser.nextToken {
+                    loadMore(token).listRowBackground(Color.clear).listRowSeparator(.hidden)
                   }
-                  .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
-                  .listRowBackground(Color.clear)
-                  .listRowSeparator(.hidden)
                 }
-                if let token = model.browser.nextToken {
-                  loadMore(token).listRowBackground(Color.clear).listRowSeparator(.hidden)
+                .listStyle(.plain)
+                .onChange(of: rows.first?.id) { _, firstID in
+                  if let firstID { scrollToTop(firstID, using: scroll) }
                 }
               }
-              .listStyle(.plain)
-              .id(model.browser.location)
             }
           } else {
-            List {
-              ForEach(rows) { row in
-                BrowserListRow(row: row, open: { open(row) }, inspect: { inspect(row) })
-                  .listRowInsets(EdgeInsets(top: 1, leading: 12, bottom: 1, trailing: 12))
-                  .listRowSeparator(.hidden)
-              }
-              if let token = model.browser.nextToken {
-                loadMore(token).listRowSeparator(.hidden)
+            GeometryReader { geometry in
+              let compact = geometry.size.width < 620
+              VStack(spacing: 0) {
+                BrowserListHeader(compact: compact)
+                  .padding(.horizontal, 16)
+                Divider()
+                ScrollViewReader { scroll in
+                  List {
+                    ForEach(rows) { row in
+                      BrowserListRow(
+                        row: row, model: model, thumbnailCache: thumbnailCache,
+                        compact: compact, isSelected: showsInspector && inspectedRow?.id == row.id,
+                        open: { open(row) }, inspect: { inspect(row) }
+                      )
+                      .listRowInsets(EdgeInsets(top: 3, leading: 16, bottom: 3, trailing: 16))
+                      .listRowSeparator(.hidden)
+                    }
+                    if let token = model.browser.nextToken {
+                      loadMore(token).listRowSeparator(.hidden)
+                    }
+                  }
+                  .listStyle(.plain)
+                  .onChange(of: rows.first?.id) { _, firstID in
+                    if let firstID { scrollToTop(firstID, using: scroll) }
+                  }
+                }
               }
             }
-            .listStyle(.plain)
-            .id(model.browser.location)
           }
         }
       }
     }
     .inspector(isPresented: $showsInspector) {
       if let inspectedRow, let object = inspectedRow.object {
-        ObjectInspectorView(row: inspectedRow, object: object, model: model) {
+        ObjectInspectorView(
+          row: inspectedRow, object: object, model: model, thumbnailCache: thumbnailCache,
+          close: { showsInspector = false }
+        ) {
           preparePreview(object)
         }
-        .id(inspectedRow.id)
         .inspectorColumnWidth(min: 300, ideal: 360, max: 480)
       }
     }
@@ -180,7 +208,9 @@ struct ObjectBrowserView: View {
       Text("\(model.browser.objects.count) objects")
         .font(.caption)
         .foregroundStyle(.secondary)
-      if isPreparingPreview { ProgressView().controlSize(.small) }
+      if isPreparingPreview || model.isConnecting || model.browser.isLoading {
+        ProgressView().controlSize(.small)
+      }
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
@@ -290,6 +320,14 @@ struct ObjectBrowserView: View {
     return stride(from: 0, to: items.count, by: columns).map { offset in
       let group = Array(items[offset..<min(offset + columns, items.count)])
       return BrowserGridRow(id: group[0].id, items: group)
+    }
+  }
+
+  private func scrollToTop(_ rowID: String, using proxy: ScrollViewProxy) {
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction) {
+      proxy.scrollTo(rowID, anchor: .top)
     }
   }
 

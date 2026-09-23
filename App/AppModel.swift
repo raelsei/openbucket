@@ -123,7 +123,6 @@ final class AppModel {
     guard let profile = selectedProfile else { return }
     generation &+= 1
     connectionTask?.cancel()
-    browser.cancel()
     connectionFailure = nil
     let requestGeneration = generation
     isConnecting = true
@@ -135,6 +134,7 @@ final class AppModel {
         isConnecting = false
       } catch {
         guard requestGeneration == generation, !Task.isCancelled else { return }
+        browser.cancel()
         connectionFailure = Self.failure(for: error)
         isConnecting = false
       }

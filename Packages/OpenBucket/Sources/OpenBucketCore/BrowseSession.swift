@@ -20,9 +20,8 @@ public final class BrowseSession {
   }
 
   public func navigate(profile: ConnectionProfile, credentials: S3Credentials, to location: S3Location) {
-    cancel()
+    stopRequest()
     activeProfileID = profile.id
-    self.location = location
     loadPage(profile: profile, credentials: credentials, location: location, token: nil, append: false)
   }
 
@@ -36,16 +35,20 @@ public final class BrowseSession {
   }
 
   public func cancel() {
-    generation &+= 1
-    activeTask?.cancel()
-    activeTask = nil
-    activeProfileID = nil
+    stopRequest()
     location = nil
     prefixes = []
     objects = []
     nextToken = nil
     failure = nil
     isLoading = false
+  }
+
+  private func stopRequest() {
+    generation &+= 1
+    activeTask?.cancel()
+    activeTask = nil
+    activeProfileID = nil
   }
 
   private func loadPage(
@@ -90,6 +93,7 @@ public final class BrowseSession {
             var seenObjects = Set(objects.map(\.id))
             objects.append(contentsOf: page.objects.filter { seenObjects.insert($0.id).inserted })
           } else {
+            self.location = location
             prefixes = page.prefixes
             objects = page.objects
           }
@@ -99,6 +103,12 @@ public final class BrowseSession {
         }
       } catch {
         guard requestGeneration == generation, !Task.isCancelled else { return }
+        if !append {
+          self.location = location
+          prefixes = []
+          objects = []
+          nextToken = nil
+        }
         failure = Self.failure(for: error)
         isLoading = false
       }
