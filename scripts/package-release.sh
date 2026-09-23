@@ -48,6 +48,7 @@ xcodebuild archive \
   CODE_SIGN_IDENTITY="$OPENBUCKET_SIGNING_IDENTITY" \
   DEVELOPMENT_TEAM="$OPENBUCKET_TEAM_ID" \
   ENABLE_HARDENED_RUNTIME=YES \
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   OTHER_CODE_SIGN_FLAGS='--options=runtime --timestamp'
 
 app="$work/OpenBucket.xcarchive/Products/Applications/OpenBucket.app"

@@ -6,8 +6,10 @@ There is no binary release yet. Publish one only after the DMG is signed with De
 
 ## One-time setup
 
-1. Install a **Developer ID Application** certificate in this Mac's Keychain. Check that `security find-identity -v -p codesigning` lists it as valid.
-2. Create a local notarytool Keychain profile. The following command securely prompts for an app-specific Apple ID password; do not put that password in the repository or shell history:
+1. On the Mac that will build releases, open **Keychain Access → Certificate Assistant → Request a Certificate from a Certificate Authority**. Enter your Apple Account email and a name, leave the CA email empty, and save the `.certSigningRequest` to disk. The matching private key stays in this Mac's Keychain. Follow [Apple's CSR instructions](https://developer.apple.com/help/account/certificates/create-a-certificate-signing-request).
+2. As the Apple Developer Program Account Holder, open [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/certificates/list), add a certificate under **Software → Developer ID → Developer ID Application**, upload the CSR, download the `.cer`, and double-click it to install it. A DMG needs the Application certificate; the Installer certificate is for `.pkg` installers. Confirm that `security find-identity -v -p codesigning` lists a valid `Developer ID Application` identity. See [Apple's Developer ID certificate guide](https://developer.apple.com/help/account/certificates/create-developer-id-certificates).
+3. Find your ten-character Team ID in [Apple Developer membership details](https://developer.apple.com/account). Generate an app-specific password at [account.apple.com](https://account.apple.com) under **Sign-In and Security → App-Specific Passwords**. Name it for OpenBucket notarization. Do not use your regular Apple Account password.
+4. Create a local notarytool Keychain profile. The following command prompts for that app-specific password securely; do not put it in the repository or shell history:
 
    ```sh
    xcrun notarytool store-credentials openbucket-release \
@@ -15,7 +17,7 @@ There is no binary release yet. Publish one only after the DMG is signed with De
      --team-id YOUR_TEAM_ID
    ```
 
-3. Set the identity name and team ID in your shell. Keep the notary profile in Keychain:
+5. Set the exact identity name from `security find-identity` and your team ID in your shell. Keep the notary profile in Keychain:
 
    ```sh
    export OPENBUCKET_SIGNING_IDENTITY='Developer ID Application: YOUR NAME (TEAMID)'
@@ -23,7 +25,7 @@ There is no binary release yet. Publish one only after the DMG is signed with De
    export OPENBUCKET_NOTARY_PROFILE='openbucket-release'
    ```
 
-The project disables signing for ordinary local and CI builds. The release script enables Developer ID signing and Hardened Runtime for its archive. No certificate, private key, or notarization password belongs in GitHub Actions secrets for this local workflow.
+The project disables signing for ordinary local and CI builds. The release script enables Developer ID signing and Hardened Runtime for its archive. This local workflow keeps the certificate's private key and notarization credentials in the Mac's Keychain rather than uploading them to GitHub Actions.
 
 ## Prepare a release
 
