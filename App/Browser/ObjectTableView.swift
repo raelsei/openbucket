@@ -6,7 +6,8 @@ struct ObjectTableView: View {
   let model: AppModel
   let thumbnailCache: ThumbnailCache
   let nextToken: String?
-  @Binding var selection: Set<BrowserRow.ID>
+  @Binding var focusedRowID: BrowserRow.ID?
+  @Binding var checkedIDs: Set<BrowserRow.ID>
   @Binding var sortOrder: [KeyPathComparator<BrowserRow>]
   let loadNextPage: () -> Void
 
@@ -14,7 +15,28 @@ struct ObjectTableView: View {
 
   var body: some View {
     let items = sortedRows
-    return Table(items, selection: $selection, sortOrder: $sortOrder) {
+    return Table(items, selection: $focusedRowID, sortOrder: $sortOrder) {
+      TableColumn("") { row in
+        if row.object != nil {
+          Toggle(
+            "Select \(row.name) for download",
+            isOn: Binding(
+              get: { checkedIDs.contains(row.id) },
+              set: { isChecked in
+                if isChecked {
+                  checkedIDs.insert(row.id)
+                } else {
+                  checkedIDs.remove(row.id)
+                }
+              }
+            )
+          )
+          .toggleStyle(.checkbox)
+          .labelsHidden()
+        }
+      }
+      .width(38)
+
       TableColumn("Name", value: \.name) { row in
         nameCell(row)
           .onAppear {

@@ -20,6 +20,7 @@ struct ObjectBrowserView: View {
   @State private var previewError: String?
   @State private var isPreparingPreview = false
   @State private var selectedIDs = Set<BrowserRow.ID>()
+  @State private var focusedTableRowID: BrowserRow.ID?
   @State private var sortOrder = [KeyPathComparator(\BrowserRow.name)]
   @State private var isSelectingGrid = false
   @State private var batchTask: Task<Void, Never>?
@@ -137,7 +138,8 @@ struct ObjectBrowserView: View {
           } else {
             ObjectTableView(
               rows: rows, model: model, thumbnailCache: thumbnailCache,
-              nextToken: model.browser.nextToken, selection: $selectedIDs,
+              nextToken: model.browser.nextToken, focusedRowID: $focusedTableRowID,
+              checkedIDs: $selectedIDs,
               sortOrder: $sortOrder, loadNextPage: model.loadNextPage
             )
           }
@@ -145,7 +147,7 @@ struct ObjectBrowserView: View {
       }
     }
     .safeAreaInset(edge: .bottom) {
-      if selectedIDs.count > 1 || isSelectingGrid
+      if !selectedIDs.isEmpty || isSelectingGrid
         || batchProgress != nil || batchResult != nil || batchMessage != nil
       {
         selectionBar
@@ -157,7 +159,6 @@ struct ObjectBrowserView: View {
           row: inspectedRow, object: object, model: model, thumbnailCache: thumbnailCache,
           close: {
             showsInspector = false
-            if selectedIDs.count == 1 { selectedIDs.removeAll() }
           }
         ) {
           preparePreview(object)
@@ -166,6 +167,9 @@ struct ObjectBrowserView: View {
       }
     }
     .quickLookPreview($previewURL)
+    .onChange(of: showsInspector) { _, isPresented in
+      if !isPresented { focusedTableRowID = nil }
+    }
     .onChange(of: previewURL) { _, url in
       if url == nil { clearPreview() }
     }
@@ -178,18 +182,13 @@ struct ObjectBrowserView: View {
       clearPreview()
       inspectedRow = nil
       showsInspector = false
+      focusedTableRowID = nil
       selectedIDs.removeAll()
       isSelectingGrid = false
     }
-    .onChange(of: selectedIDs) { _, selection in
+    .onChange(of: focusedTableRowID) { _, id in
       guard layout == .list else { return }
-      guard selection.count == 1,
-        let id = selection.first,
-        let row = rows.first(where: { $0.id == id })
-      else {
-        showsInspector = false
-        return
-      }
+      guard let id, let row = rows.first(where: { $0.id == id }) else { return }
       if row.prefix != nil {
         open(row)
       } else {
@@ -237,7 +236,7 @@ struct ObjectBrowserView: View {
         }
         .buttonStyle(.glass)
       } else if layout == .list, model.browser.objects.count > 1 {
-        Button("Select Loaded") {
+        Button("Select All Loaded") {
           selectedIDs = Set(rows.filter { $0.object != nil }.map(\.id))
           showsInspector = false
         }
