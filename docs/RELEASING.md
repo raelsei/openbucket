@@ -1,8 +1,8 @@
 # Releasing OpenBucket for macOS
 
-Users download the app from [GitHub Releases](https://github.com/raelsei/openbucket/releases). Each published release has a tag such as `v0.1.0`, release notes, a versioned `OpenBucket-v0.1.0-macOS.dmg`, and a matching `.sha256` file. The DMG contains a universal Apple silicon and Intel `OpenBucket.app` and an Applications shortcut. GitHub's source archives are for developers; they are not the app installer.
+Users download the app from [GitHub Releases](https://github.com/raelsei/openbucket/releases). Each published release has a version tag, release notes, a versioned DMG, and a matching `.sha256` file. The DMG contains a universal Apple silicon and Intel `OpenBucket.app` and an Applications shortcut. GitHub's source archives are for developers; they are not the app installer.
 
-There is no binary release yet. Publish one only after the DMG is signed with Developer ID, accepted by Apple's notary service, stapled, and tested from the downloaded file. [Apple's direct-distribution guidance](https://developer.apple.com/documentation/technologyoverviews/distribution) explains why this matters for Gatekeeper.
+Publish only after the DMG is signed with Developer ID, accepted by Apple's notary service, stapled, and tested from the downloaded file. [Apple's direct-distribution guidance](https://developer.apple.com/documentation/technologyoverviews/distribution) explains why this matters for Gatekeeper.
 
 ## One-time setup
 
@@ -29,12 +29,13 @@ The project disables signing for ordinary local and CI builds. The release scrip
 
 ## Prepare a release
 
-1. Update the version in `project.yml`, regenerate `OpenBucket.xcodeproj` with `xcodegen generate --spec project.yml`, and update the release notes. Start with [v0.1.0 notes](releases/v0.1.0.md) for the first release.
+1. Update the version and build number in `project.yml`, regenerate `OpenBucket.xcodeproj` with `xcodegen generate --spec project.yml`, and write release notes in `docs/releases/`.
 2. Run the format check and macOS tests shown in the main README. Commit and push a clean `main` branch.
 3. Build and notarize the DMG:
 
    ```sh
-   scripts/package-release.sh 0.1.0
+   VERSION=0.1.1
+   scripts/package-release.sh "$VERSION"
    ```
 
    The script refuses to put an unnotarized image in `dist/`. It verifies the app signature, waits for notarization to be accepted, staples the ticket to the DMG, verifies the DMG, and writes its SHA-256 checksum. `dist/` is ignored by Git.
@@ -43,16 +44,17 @@ The project disables signing for ordinary local and CI builds. The release scrip
 5. Tag the exact tested commit and create a **draft** GitHub release:
 
    ```sh
-   git tag -a v0.1.0 -m 'OpenBucket v0.1.0'
-   git push origin v0.1.0
-   gh release create v0.1.0 \
-     dist/OpenBucket-v0.1.0-macOS.dmg \
-     dist/OpenBucket-v0.1.0-macOS.dmg.sha256 \
+   VERSION=0.1.1
+   git tag -a "v$VERSION" -m "OpenBucket v$VERSION"
+   git push origin "v$VERSION"
+   gh release create "v$VERSION" \
+     "dist/OpenBucket-v$VERSION-macOS.dmg" \
+     "dist/OpenBucket-v$VERSION-macOS.dmg.sha256" \
      --draft --verify-tag \
-     --title 'OpenBucket v0.1.0' \
-     --notes-file docs/releases/v0.1.0.md
+     --title "OpenBucket v$VERSION" \
+     --notes-file "docs/releases/v$VERSION.md"
    ```
 
-6. Review the draft's assets, notes, and download on GitHub, then publish it. After the first release, update the README's current no-release message. The stable link for users is `https://github.com/raelsei/openbucket/releases/latest`.
+6. Review the draft's assets, notes, and download on GitHub, then publish it. The stable link for users is `https://github.com/raelsei/openbucket/releases/latest`.
 
 Do not reuse a version tag for different app bits. Fixes after publishing get a new version and a new tag.

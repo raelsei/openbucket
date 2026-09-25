@@ -11,15 +11,13 @@
 ![S3 focused](https://img.shields.io/badge/S3-focused-54b6cb)
 ![MIT license](https://img.shields.io/badge/license-MIT-8b8bd4)
 
-<img src="docs/media/openbucket-hero.png" width="100%" alt="Glass bucket holding image and document objects">
-
 </div>
 
 OpenBucket is an early, read-only macOS app for Amazon S3 and S3-compatible object stores. It uses SwiftUI, the macOS 26 Liquid Glass appearance, and [Soto](https://github.com/soto-project/soto) behind a replaceable S3 adapter. It stays focused on S3 rather than adding unrelated file protocols.
 
 ## Download
 
-Signed and notarized macOS builds will be published on [GitHub Releases](https://github.com/raelsei/openbucket/releases). There is no downloadable app release yet; until the first release, build from source using the steps below. A release will contain one universal (Apple silicon and Intel) `OpenBucket` DMG and its SHA-256 checksum. Open the DMG, drag OpenBucket to Applications, and launch it there. See [how releases are prepared](docs/RELEASING.md).
+Download the latest signed and notarized build from [GitHub Releases](https://github.com/raelsei/openbucket/releases/latest). Open the macOS DMG, drag OpenBucket to Applications, and launch it there. The release includes a SHA-256 checksum; the app supports Apple silicon and Intel Macs running macOS 26 or later. See [how releases are prepared](docs/RELEASING.md).
 
 ## See it in action
 
@@ -42,9 +40,9 @@ The screenshots show a real OpenBucket window connected to a local Garage bucket
 
 Browsing, inspection, previews, and downloads do not modify S3 objects. Upload, delete, sync, Finder mounting, and non-S3 protocols are outside this preview. [Compatibility details](docs/compatibility.md) document endpoint paths and provider test status; [security details](docs/security.md) explain local storage and temporary files.
 
-## Get started
+## Connect to S3
 
-You need **macOS 26 or later** and **Xcode 27**. Open `OpenBucket.xcodeproj`, select the `OpenBucket` scheme, and run it on your Mac.
+After installing the app:
 
 1. Choose **Add Connection**.
 2. Enter the S3 endpoint URL and region. For a custom service such as Garage, choose **Path style** if its buckets live beneath the endpoint path.
@@ -70,7 +68,7 @@ After setting them in your shell, run `scripts/seed-demo.sh` and open the printe
 
 ## Build and test
 
-The Xcode project is committed. [XcodeGen](https://github.com/yonaskolb/XcodeGen) is needed only after changing `project.yml`:
+Building from source requires **macOS 26 or later** and **Xcode 27**. Open `OpenBucket.xcodeproj`, select the `OpenBucket` scheme, and run it on your Mac. The Xcode project is committed; [XcodeGen](https://github.com/yonaskolb/XcodeGen) is needed only after changing `project.yml`:
 
 ```sh
 xcodegen generate --spec project.yml
@@ -98,4 +96,4 @@ flowchart LR
 
 `OpenBucketCore` owns S3 values and browsing state. `OpenBucketS3` adapts Soto and keeps SDK types outside the UI. `App` contains SwiftUI and macOS storage; `OpenBucketApp` wires them together. The adapter boundary allows the SDK implementation to change without reshaping the browser.
 
-Contributions are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md). [Visual asset sources](docs/ASSETS.md) are documented. OpenBucket is licensed under [MIT](LICENSE).
+Contributions are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md). OpenBucket is licensed under [MIT](LICENSE).
